@@ -22,10 +22,10 @@ $password = "654321";
 $sqlite = "/home/pi/domoticz.db";
 # Virtual counter Idx
 $device_idx = 15;
-# Mois a importer (utiliser uniquement lors de l'initialisation)
+# Mois a importer (utiliser plutot les arguments! )
 # Importe le mois courant si null
 # Format "MM/AAAA" . Exemple :
-#$month = "11/2016";
+# $month = "11/2016";
 $month = null;
 
 ############## End Configuration ###########################
@@ -95,23 +95,25 @@ $last_tr = $table->find('tr',-1);
 $liters = $date = null;
 
 // Open domoticz database
+if ( ! file_exists($sqlite))
+	exit("Fichier $sqlite introuvable?\n");
 $db = new SQLite3($sqlite);
+// CHeck if Db is OK
+$results = $db->query("SELECT name FROM sqlite_master WHERE type='table' AND name='DeviceStatus';");
+$check =  $results->fetchArray(SQLITE3_ASSOC);
+if ( empty($check['name']) ) 
+	exit("La base de donnée $sqlite semble corrompue ou n'est pas une BdD domoticz?");
+
 // Transaction
 $db->exec("BEGIN IMMEDIATE TRANSACTION");
 try {
   // ON cherche la dernière valeur du compteur (em m3!)
   $add_counter = false;
-  $results = $db->query("SELECT Counter,Date from Meter_Calendar WHERE Counter != 0 ORDER By Date DESC LIMIT 1; ");
-  if ( $results ) {
-  	$counter = $results->fetchArray(SQLITE3_ASSOC);
-	if ( empty($counter['Counter'])) {
-		// On initialise avec la valeur d'offset de la table DeviceStatus
-		$results = $db->query("SELECT date(LastUpdate) as Date ,AddjValue as Counter from DeviceStatus where  ID=".$device_idx." ;");
-		$counter = $results->fetchArray(SQLITE3_ASSOC);
-	}
-  }
-
-  $last_date = $counter['Date'];
+  $update = '';
+  // On initialise le compteur avec la valeur sValue de la table DeviceStatus
+  $results = $db->query("SELECT date(LastUpdate) as Date ,sValue as Counter from DeviceStatus where  ID=".$device_idx." ;");
+  $counter = $results->fetchArray(SQLITE3_ASSOC);
+  $last_update = $update_date = $counter['Date'];
   $compteur = $counter['Counter'];
 
   foreach ( $table->find('tr') as $tr ) {
@@ -125,19 +127,22 @@ try {
 			// l'entrée existe déjà ?
 			$exists = $db->query("SELECT Date,Counter FROM Meter_Calendar WHERE Date = '" . $date ."' ;");
 			$exist = $exists->fetchArray(SQLITE3_ASSOC);
+			if ($add_counter)
+				$compteur +=  $liters/100;
 			if ( empty($exist) === false ) {
 				if ( empty($exist['Counter']) === false || empty($add_counter) ) { // Deja en BdD avec compteur
 					if ( $debug ) echo "Rien à faire pour la date du ".$date.", compteur = ".$exist['Counter']." (".$add_counter.")\n";
 					continue; 
 				}
-				// Faut ajouter la conso au  compteur
-				$compteur +=  $liters/100;
-				// On supprime l'entrée qui va être mise à 
+				//  Mise à jour avec Counter
                         	$sql_query = "UPDATE Meter_Calendar SET Counter=".$compteur." WHERE Date='".$exist['Date']."' AND DeviceRowID=".$device_idx.";";
+				$update = $exist['Date'] . ' ' . date("H:i:s");
 			} else {
-				$compteur = $add_counter ? $compteur + $liters/100 : 0 ;
-				$sql_query = "INSERT INTO Meter_Calendar VALUES($device_idx,".$liters.",". $compteur .",'".$date."'); ";
-			}	
+				$this_counter = $add_counter ? $compteur : 0 ;
+				$sql_query = "INSERT INTO Meter_Calendar VALUES($device_idx,".$liters.",". $this_counter .",'".$date."'); ";
+				$update = $date . ' ' . date("H:i:s");
+			}
+
 			if ( $debug ) echo "requete SQL : ".$sql_query ."\n";
 			// Et on insert.
 			$db->exec($sql_query); 
@@ -148,11 +153,20 @@ try {
 			if ( count($date) != 3 || empty($date[2]) || empty($date[1]) || empty($date[0]) )
 				exit('Bad date detected in veolia web page ? ' . $td->innertext);
 			$date = $date[2].'-'.$date[1].'-'.$date[0];
-			if ( $date === $last_date )
+			if ( $date === $last_update )
 				$add_counter = true;
 			$conso = true;
 		}
 	}
+
+  }
+  if ( $update ) { // On va mettre à jour la table DeviceStatus
+	if ( $add_counter )
+		$sql_query = "UPDATE DeviceStatus SET LastUpdate='".$update."' , sValue=".$compteur." WHERE ID=".$device_idx." ;";
+	else
+		$sql_query = "UPDATE DeviceStatus SET LastUpdate='".$update."' WHERE ID=".$device_idx." ;";
+	if ( $debug ) echo $sql_query . "\n";
+	$db->query($sql_query);
   }
 } catch ( Exception $e) {
   $db->exec("ROLLBACK TRANSACTION");
