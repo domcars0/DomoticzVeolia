@@ -113,7 +113,7 @@ try {
 				// On supprime l'entrée qui va être mise à 
                         	$sql_query = "UPDATE Meter_Calendar SET Counter=".$compteur." WHERE Date='".$exist['Date']."' AND DeviceRowID=".$device_idx.";";
 			} else {
-				$compteur = $add_counter ? $compteur + liters/100 : 0 ;
+				$compteur = $add_counter ? $compteur + $liters/100 : 0 ;
 				$sql_query = "INSERT INTO Meter_Calendar VALUES($device_idx,".$liters.",". $compteur .",'".$date."'); ";
 			}	
 			if ( $debug ) echo "requete SQL : ".$sql_query ."\n";
