@@ -37,9 +37,22 @@ $debug = false;
 $loginUrl="https://www.eau-services.com/default.aspx"; 
 # Consommations
 $dataUrl="https://www.eau-services.com/mon-espace-suivi-personnalise.aspx";
+
+# Un mois particulier ?
 if ( $month ) {
 	$dataUrl .= "?mm=".$month;
+	$arg = explode ('/',$month);
+	echo "Pour ne pas devoir modifier la configuration de water.php, vous pouviez aussi lancer ./water.php avec les arguments ".$arg[0]." ".$arg[1]." ;o)\n";
+
 	$debug = true;
+} else if ( empty($argv[1]) === false && is_numeric($argv[1]) 
+		&&  empty($argv[2]) === false && is_numeric($argv[2]) )  {
+	if ( $argv[1] > 12 || $argv[1] < 1 )
+		exit( " Erreur : Le premier argument doit etre compris entre 1 et 12\n");
+	if ( $argv[2] < 2010 || $argv[2] > 2030 )
+		exit( " Erreur : Le second argument doit etre compris entre 2010 et 2030\n");
+	$dataUrl .= "?mm=".$argv[1].'/'.$argv[2] ;
+        $debug = true;
 }
 
 require('simple_html_dom.php');
