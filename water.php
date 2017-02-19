@@ -22,6 +22,11 @@ $password = "654321";
 $sqlite = "/home/pi/domoticz.db";
 # Virtual counter Idx
 $device_idx = 15;
+# Mois a importer (utiliser uniquement lors de l'initialisation)
+# Importe le mois courant si null
+# Format "MM/AAAA" . Exemple :
+#$month = "11/2016";
+$month = null;
 
 ############## End Configuration ###########################
 
@@ -32,6 +37,10 @@ $debug = false;
 $loginUrl="https://www.eau-services.com/default.aspx"; 
 # Consommations
 $dataUrl="https://www.eau-services.com/mon-espace-suivi-personnalise.aspx";
+if ( $month ) {
+	$dataUrl .= "?mm=".$month;
+	$debug = true;
+}
 
 require('simple_html_dom.php');
 
