@@ -18,7 +18,7 @@
 # identifier and password of your Veolia account
 $identifier = "1234567";
 $password = "654321";
-# path to the domoticz sqlite database
+# Path to the domoticz sqlite database
 $sqlite = "/home/pi/domoticz.db";
 # Virtual counter Idx
 $device_idx = 15;
@@ -82,9 +82,11 @@ try {
   $results = $db->query("SELECT Counter,Date from Meter_Calendar WHERE Counter != 0 ORDER By Date DESC LIMIT 1; ");
   if ( $results ) {
   	$counter = $results->fetchArray(SQLITE3_ASSOC);
-	// On initialise avec la valeur d'offset de la table DeviceStatus
-	$results = $db->query("SELECT date(LastUpdate) as Date ,AddjValue as Counter from DeviceStatus where  ID=".$device_idx." ;");
-	$counter = $results->fetchArray(SQLITE3_ASSOC);
+	if ( empty($counter['Counter'])) {
+		// On initialise avec la valeur d'offset de la table DeviceStatus
+		$results = $db->query("SELECT date(LastUpdate) as Date ,AddjValue as Counter from DeviceStatus where  ID=".$device_idx." ;");
+		$counter = $results->fetchArray(SQLITE3_ASSOC);
+	}
   }
 
   $last_date = $counter['Date'];
@@ -110,8 +112,10 @@ try {
 				$compteur +=  $liters/100;
 				// On supprime l'entrée qui va être mise à 
                         	$sql_query = "UPDATE Meter_Calendar SET Counter=".$compteur." WHERE Date='".$exist['Date']."' AND DeviceRowID=".$device_idx.";";
-			} else
+			} else {
+				$compteur = $add_counter ? $compteur + liters/100 : 0 ;
 				$sql_query = "INSERT INTO Meter_Calendar VALUES($device_idx,".$liters.",". $compteur .",'".$date."'); ";
+			}	
 			if ( $debug ) echo "requete SQL : ".$sql_query ."\n";
 			// Et on insert.
 			$db->exec($sql_query); 
