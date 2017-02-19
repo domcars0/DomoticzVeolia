@@ -7,7 +7,7 @@
 * 		domcars0
 *
 *
-* Licensed under The MIT License
+* Licensed under The GPL V3 License
 * Redistributions of files must retain the above copyright notice.
 *
 * @author domcars0
