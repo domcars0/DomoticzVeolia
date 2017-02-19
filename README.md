@@ -14,9 +14,10 @@ __ Mise en place :
 	- Dans l'onglet "Mesures", le périphérique "Eau" apparait, cliquer sur "Editer" pour changer le "Type" d'énergie, choisir "Water". 
   * Placer les deux fichiers water.php et simple_html_dom.php dans un même répertoire (exemple /home/pi/Veolia)
   * Rendre executable le fichier water.php (chmod +x water.php)
-  * Editer le fichier water.php et renseigner les variables $identifier (votre identifiant veolia),  $password (votre mot de passe sur le site veolia), $sqlite (chemin complet vers la base de données domoticz), $device_idx (Idx du capteur virtuel d'eau). Pour importer un mois antérieur au mois cournat, ajuster la variable $month en conséquence  et lancer le script water.php (remettre à null en usage normal).
+  * Editer le fichier water.php et renseigner les variables $identifier (votre identifiant veolia),  $password (votre mot de passe sur le site veolia), $sqlite (chemin complet vers la base de données domoticz), $device_idx (Idx du capteur virtuel d'eau).
  * Créer un crontab qui lancera le script water.php une fois par jour.
 
 __ Notes
   * Veolia ne fournit les informations de consommation du jour J qu'à J+3.
   * Les informations de conso du jour en cours ne sont pas disponibles
+  * Pour importer un mois particulier d'un année particulière, lancer le script water.php avec les arguments M et A ou M est le mois (compris entre 1 et 12) et A l'année (entre 2010 et 2030). Ex: la commande 'water.php 7 2015' importera les données de juillet 2015 (si elles existent sur le site)
