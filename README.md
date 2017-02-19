@@ -11,9 +11,10 @@ __ Mise en place :
   * Domoticz :
 	- Créer un matériel de type "Dummy" (virtuel) appelé "Veolia"
 	- Depuis ce matériel, créer un capteur virtuel de type "Compteur" appelé "Eau" et l'activé. Retenir l'Idx de ce capteur.
-	- Dans l'onglet "Mesures", le périphérique Eau apparait, cliquer sur "Editer" pour changer le "Type" d'émergie, choisir "Water". 
-  * Placer les deux fichiers water.php et simple_html_dom.php dans un même répertoir (exemple /home/pi/Veolia)
-  * Editer le fichier water.php et rensigner les variables $identifier (votre identifiant veolia),  $password (votre mot de passe sur le site veolia), $sqlite (chemin complet vers la base de données domoticz), $device_idx (Idx du capteur virtuel d'eau). Pour importer un mois antérieur au mois cournat, ajuster la variable $month en conséquence (remettre à null en usage normal)
+	- Dans l'onglet "Mesures", le périphérique "Eau" apparait, cliquer sur "Editer" pour changer le "Type" d'énergie, choisir "Water". 
+  * Placer les deux fichiers water.php et simple_html_dom.php dans un même répertoire (exemple /home/pi/Veolia)
+  * Rendre executable le fichier water.php (chmod +x water.php)
+  * Editer le fichier water.php et renseigner les variables $identifier (votre identifiant veolia),  $password (votre mot de passe sur le site veolia), $sqlite (chemin complet vers la base de données domoticz), $device_idx (Idx du capteur virtuel d'eau). Pour importer un mois antérieur au mois cournat, ajuster la variable $month en conséquence  et lancer le script water.php (remettre à null en usage normal).
  * Créer un crontab qui lancera le script water.php une fois par jour.
 
 __ Notes
