@@ -17,7 +17,7 @@
 ######### Configuration ###################
 # identifier and password of your Veolia account
 $identifier = "1234567";
-$password = "654321";
+#$password = "654321";
 # Path to the domoticz sqlite database
 $sqlite = "/home/pi/domoticz.db";
 # Virtual counter Idx
@@ -30,7 +30,7 @@ $month = null;
 
 ############## End Configuration ###########################
 
-$debug = false;
+$debug = true;
 
 # Veolia web Page
 # login page
@@ -91,7 +91,9 @@ curl_close($ch);
 $html=str_get_html($string);
 
 $table = $html->find('table[class=responsive]',0);
-$last_tr = $table->find('tr',-1);
+if ( !is_object($table))
+	exit("Le code ne semble pas provenir du site Veolia Mediterranée ou Veolia Mediterranee a modifié son site,  désolé.\n");
+
 $liters = $date = null;
 
 // Open domoticz database
@@ -116,6 +118,9 @@ try {
   $last_update = $update_date = $counter['Date'];
   $compteur = $counter['Counter'];
 
+  // ON supprime l'entrée correspondante à aujourd'hui (faites par domoticz  à 0h00 ?)
+ $db->exec("DELETE FROM Meter_Calendar WHERE Date='".date("Y-m-d")."' ;");
+
   foreach ( $table->find('tr') as $tr ) {
 	$conso = false;
 	foreach ( $tr->find('td') as $td ) {
@@ -131,7 +136,7 @@ try {
 				$compteur +=  $liters/100;
 			if ( empty($exist) === false ) {
 				if ( empty($exist['Counter']) === false || empty($add_counter) ) { // Deja en BdD avec compteur
-					if ( $debug ) echo "Rien à faire pour la date du ".$date.", compteur = ".$exist['Counter']." (".$add_counter.")\n";
+					if ( $debug ) echo "Rien à faire pour la date du ".$date.", ($liters L), compteur = ".$exist['Counter']." (".$add_counter.")\n";
 					continue; 
 				}
 				//  Mise à jour avec Counter
