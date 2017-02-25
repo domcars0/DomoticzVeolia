@@ -17,7 +17,7 @@
 ######### Configuration ###################
 # identifier and password of your Veolia account
 $identifier = "1234567";
-#$password = "654321";
+$password = "654321";
 # Path to the domoticz sqlite database
 $sqlite = "/home/pi/domoticz.db";
 # Virtual counter Idx
@@ -30,7 +30,7 @@ $month = null;
 
 ############## End Configuration ###########################
 
-$debug = true;
+$debug = false;
 
 # Veolia web Page
 # login page
@@ -114,12 +114,13 @@ try {
   $update = '';
   // On initialise le compteur avec la valeur sValue de la table DeviceStatus
   $results = $db->query("SELECT date(LastUpdate) as Date ,sValue as Counter from DeviceStatus where  ID=".$device_idx." ;");
-  $counter = $results->fetchArray(SQLITE3_ASSOC);
-  $last_update = $update_date = $counter['Date'];
-  $compteur = $counter['Counter'];
+  $deviceStatus = $results->fetchArray(SQLITE3_ASSOC);
+  $last_update = $update_date = $deviceStatus['Date'];
+  $compteur = $deviceStatus['Counter'];
+  if ( $debug) echo "Dernier update du compteur  le $last_update : ".$deviceStatus['Counter']." m3 \n";
 
   // ON supprime l'entrée correspondante à aujourd'hui (faites par domoticz  à 0h00 ?)
- $db->exec("DELETE FROM Meter_Calendar WHERE Date='".date("Y-m-d")."' ;");
+ $db->exec("DELETE FROM Meter_Calendar WHERE Date='".date("Y-m-d")."' AND DeviceRowID=".$device_idx." ;");
 
   foreach ( $table->find('tr') as $tr ) {
 	$conso = false;
@@ -133,9 +134,9 @@ try {
 			$exists = $db->query("SELECT Date,Counter FROM Meter_Calendar WHERE Date = '" . $date ."' ;");
 			$exist = $exists->fetchArray(SQLITE3_ASSOC);
 			if ($add_counter)
-				$compteur +=  $liters/100;
+				$compteur +=  $liters;
 			if ( empty($exist) === false ) {
-				if ( empty($exist['Counter']) === false || empty($add_counter) ) { // Deja en BdD avec compteur
+				if (empty($add_counter) ) { // Deja en BdD 
 					if ( $debug ) echo "Rien à faire pour la date du ".$date.", ($liters L), compteur = ".$exist['Counter']." (".$add_counter.")\n";
 					continue; 
 				}
@@ -166,7 +167,7 @@ try {
 
   }
   if ( $update ) { // On va mettre à jour la table DeviceStatus
-	if ( $add_counter )
+	if ( $add_counter ) 
 		$sql_query = "UPDATE DeviceStatus SET LastUpdate='".$update."' , sValue=".$compteur." WHERE ID=".$device_idx." ;";
 	else
 		$sql_query = "UPDATE DeviceStatus SET LastUpdate='".$update."' WHERE ID=".$device_idx." ;";
