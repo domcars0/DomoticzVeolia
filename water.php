@@ -119,8 +119,8 @@ try {
   $compteur = $deviceStatus['Counter'];
   if ( $debug) echo "Dernier update du compteur  le $last_update : ".$deviceStatus['Counter']." m3 \n";
 
-  // ON supprime l'entrée correspondante à aujourd'hui (faites par domoticz  à 0h00 ?)
- $db->exec("DELETE FROM Meter_Calendar WHERE Date='".date("Y-m-d")."' AND DeviceRowID=".$device_idx." ;");
+  // ON supprime l'entrée correspondante à hier (faites par domoticz  à 0h00 ?)
+ $db->exec("DELETE FROM Meter_Calendar WHERE Date='".date("Y-m-d",mktime(0, 0, 0, date("m")  , date("d")-1, date("Y")))."' AND DeviceRowID=".$device_idx." ;");
 
   foreach ( $table->find('tr') as $tr ) {
 	$conso = false;
@@ -166,11 +166,8 @@ try {
 	}
 
   }
-  if ( $update ) { // On va mettre à jour la table DeviceStatus
-	if ( $add_counter ) 
-		$sql_query = "UPDATE DeviceStatus SET LastUpdate='".$update."' , sValue=".$compteur." WHERE ID=".$device_idx." ;";
-	else
-		$sql_query = "UPDATE DeviceStatus SET LastUpdate='".$update."' WHERE ID=".$device_idx." ;";
+  if (  $add_counter && $update ) { // On va mettre à jour la table DeviceStatus
+	$sql_query = "UPDATE DeviceStatus SET LastUpdate='".$update."' , sValue=".$compteur." WHERE ID=".$device_idx." ;";
 	if ( $debug ) echo $sql_query . "\n";
 	$db->query($sql_query);
   }
