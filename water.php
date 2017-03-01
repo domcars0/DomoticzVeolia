@@ -13,13 +13,18 @@
 * @author domcars0
 *
 */
+date_default_timezone_set('Europe/Paris');
 
 ######### Configuration ###################
 # identifier and password of your Veolia account
-$identifier = "1234567";
-$password = "654321";
+#$identifier = "1234567";
+$identifier = "3921758";
+#$password = "654321";
+$password = "135137";
 # Path to the domoticz sqlite database
 $sqlite = "/home/pi/domoticz.db";
+$sqlite = "/tmp/domoticz.db";
+#$sqlite = "./domoticz.db";
 # Virtual counter Idx
 $device_idx = 15;
 # Mois a importer (utiliser plutot les arguments! )
@@ -32,21 +37,19 @@ $month = null;
 
 $debug = false;
 
-// On doit importer le mois précédent à cause du J-3
-if ( !$month && date ('d') < 3 ) 
-  	$month = date("m/Y",mktime(0, 0, 0, date("m")  , date("d")-3, date("Y")));
-
 # Veolia web Page
 # login page
 $loginUrl="https://www.eau-services.com/default.aspx"; 
 # Consommations
 $dataUrl="https://www.eau-services.com/mon-espace-suivi-personnalise.aspx";
 
-# Un mois particulier ?
-if ( $month ) {
+// On doit importer le mois précédent à cause du J-3
+if ( !$month && date ('d') < 3 )  {
+        $month = date("m/Y",mktime(0, 0, 0, date("m")  , date("d")-3, date("Y")));
+        $dataUrl .= "?ex=.".$month."&mm=".$month;
+} else if ( $month ) {
+	# Un mois particulier ?
 	$dataUrl .= "?mm=".$month;
-	$arg = explode ('/',$month);
-
 	$debug = true;
 } else if ( empty($argv[1]) === false && is_numeric($argv[1]) 
 		&&  empty($argv[2]) === false && is_numeric($argv[2]) )  {
@@ -173,7 +176,7 @@ try {
 
   }
   if (  $add_counter && $update ) { // On va mettre à jour la table DeviceStatus
-	$sql_query = "UPDATE DeviceStatus SET LastUpdate='".$update."' , sValue=".$compteur." WHERE ID=".$device_idx." ;";
+	$sql_query = "UPDATE DeviceStatus SET LastUpdate='".$update."' , sValue=".$compteur." WHERE ID=".$device_idx." AND LastUpdate<'".$update."';";
 	if ( $debug ) echo $sql_query . "\n";
 	$db->query($sql_query);
   }
