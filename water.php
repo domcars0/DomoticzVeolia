@@ -32,6 +32,10 @@ $month = null;
 
 $debug = false;
 
+// On doit importer le mois précédent à cause du J-3
+if ( !$month && date ('d') < 3 ) 
+  	$month = date("m/Y",mktime(0, 0, 0, date("m")  , date("d")-3, date("Y")));
+
 # Veolia web Page
 # login page
 $loginUrl="https://www.eau-services.com/default.aspx"; 
@@ -42,7 +46,6 @@ $dataUrl="https://www.eau-services.com/mon-espace-suivi-personnalise.aspx";
 if ( $month ) {
 	$dataUrl .= "?mm=".$month;
 	$arg = explode ('/',$month);
-	echo "Pour ne pas devoir modifier la configuration de water.php, vous pouviez aussi lancer ./water.php avec les arguments ".$arg[0]." ".$arg[1]." ;o)\n";
 
 	$debug = true;
 } else if ( empty($argv[1]) === false && is_numeric($argv[1]) 
@@ -120,8 +123,11 @@ try {
   if ( $debug) echo "Dernier update du compteur  le $last_update : ".$deviceStatus['Counter']." m3 \n";
 
   // ON supprime l'entrée correspondante à hier (faites par domoticz  à 0h00 ?)
+  $yesterday = date("Y-m-d",mktime(0, 0, 0, date("m")  , date("d")-1, date("Y")));
  $db->exec("DELETE FROM Meter_Calendar WHERE Date='".date("Y-m-d",mktime(0, 0, 0, date("m")  , date("d")-1, date("Y")))."' AND DeviceRowID=".$device_idx." ;");
+  if ( $debug ) print "Hier = $yesterday \n";
 
+  
   foreach ( $table->find('tr') as $tr ) {
 	$conso = false;
 	foreach ( $tr->find('td') as $td ) {
