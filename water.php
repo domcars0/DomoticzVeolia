@@ -46,7 +46,7 @@ $dataUrl="https://www.eau-services.com/mon-espace-suivi-personnalise.aspx";
 // On doit importer le mois précédent à cause du J-3
 if ( !$month && date ('d') < 3 )  {
         $month = date("m/Y",mktime(0, 0, 0, date("m")  , date("d")-3, date("Y")));
-        $dataUrl .= "?ex=.".$month."&mm=".$month;
+        $dataUrl .= "?mm=".$month;
 } else if ( $month ) {
 	# Un mois particulier ?
 	$dataUrl .= "?mm=".$month;
