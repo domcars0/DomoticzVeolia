@@ -17,14 +17,10 @@ date_default_timezone_set('Europe/Paris');
 
 ######### Configuration ###################
 # identifier and password of your Veolia account
-#$identifier = "1234567";
-$identifier = "3921758";
-#$password = "654321";
-$password = "135137";
+$identifier = "1234567";
+$password = "654321";
 # Path to the domoticz sqlite database
 $sqlite = "/home/pi/domoticz.db";
-$sqlite = "/tmp/domoticz.db";
-#$sqlite = "./domoticz.db";
 # Virtual counter Idx
 $device_idx = 15;
 # Mois a importer (utiliser plutot les arguments! )
@@ -44,9 +40,9 @@ $loginUrl="https://www.eau-services.com/default.aspx";
 $dataUrl="https://www.eau-services.com/mon-espace-suivi-personnalise.aspx";
 
 // On doit importer le mois précédent à cause du J-3
-if ( !$month && date ('d') < 3 )  {
+if ( !$month && date ('d') < 4 )  {
         $month = date("m/Y",mktime(0, 0, 0, date("m")  , date("d")-3, date("Y")));
-        $dataUrl .= "?mm=".$month;
+	$dataUrl .= "?mm=".$month;
 } else if ( $month ) {
 	# Un mois particulier ?
 	$dataUrl .= "?mm=".$month;
@@ -95,6 +91,7 @@ curl_close($ch);
 
 // Prepare to parse the Dom
 $html=str_get_html($string);
+// print "<pre>"; print $string;print "</pre>\n";
 
 $table = $html->find('table[class=responsive]',0);
 if ( !is_object($table))
@@ -128,8 +125,6 @@ try {
   // ON supprime l'entrée correspondante à hier (faites par domoticz  à 0h00 ?)
   $yesterday = date("Y-m-d",mktime(0, 0, 0, date("m")  , date("d")-1, date("Y")));
  $db->exec("DELETE FROM Meter_Calendar WHERE Date='".date("Y-m-d",mktime(0, 0, 0, date("m")  , date("d")-1, date("Y")))."' AND DeviceRowID=".$device_idx." ;");
-  if ( $debug ) print "Hier = $yesterday \n";
-
   
   foreach ( $table->find('tr') as $tr ) {
 	$conso = false;
@@ -167,6 +162,8 @@ try {
 			$date = explode('/',$td->innertext );
 			if ( count($date) != 3 || empty($date[2]) || empty($date[1]) || empty($date[0]) )
 				exit('Bad date detected in veolia web page ? ' . $td->innertext);
+			else if ( $debug ) 
+				echo "Enregistrement du ".$td->innertext."\n";
 			$date = $date[2].'-'.$date[1].'-'.$date[0];
 			if ( $date === $last_update )
 				$add_counter = true;
