@@ -94,8 +94,12 @@ $html=str_get_html($string);
 // print "<pre>"; print $string;print "</pre>\n";
 
 $table = $html->find('table[class=responsive]',0);
-if ( !is_object($table))
+if ( !is_object($table)) {
+	if ( $debug ) { 
+		print "URL = ".$dataUrl."<pre>";print ($string);
+	}
 	exit("Le code ne semble pas provenir du site Veolia Mediterranée ou Veolia Mediterranee a modifié son site,  désolé.\n");
+}
 
 $liters = $date = null;
 
@@ -119,8 +123,12 @@ try {
   $results = $db->query("SELECT date(LastUpdate) as Date ,sValue as Counter from DeviceStatus where  ID=".$device_idx." ;");
   $deviceStatus = $results->fetchArray(SQLITE3_ASSOC);
   $last_update = $update_date = $deviceStatus['Date'];
+  // On calcule le last_update en Unix Time
+  $lupd = explode('-',$last_update);
+  $lupd = mktime(0,0,0,$lupd[1],$lupd[2],$lupd[0]);
   $compteur = $deviceStatus['Counter'];
-  if ( $debug) echo "Dernier update du compteur  le $last_update : ".$deviceStatus['Counter']." m3 \n";
+  if ( $debug) 
+	echo "Dernier update du compteur  le $last_update (".$lupd.") : ".$deviceStatus['Counter']." m3 \n";
 
   // ON supprime l'entrée correspondante à hier (faites par domoticz  à 0h00 ?)
   $yesterday = date("Y-m-d",mktime(0, 0, 0, date("m")  , date("d")-1, date("Y")));
@@ -130,8 +138,7 @@ try {
 	$conso = false;
 	foreach ( $tr->find('td') as $td ) {
 		if ( $conso ) { 
-			// Faut diviser par 10 ?
-			$liters = $td->innertext /10;
+			$liters = $td->innertext ;
 			// [Meter_Calendar] ([DeviceRowID] BIGINT NOT NULL, [Value] BIGINT NOT NULL, [Counter] BIGINT DEFAULT 0, [Date] DATETIME DEFAULT (datetime('now','localtime')));
 
 			// l'entrée existe déjà ?
@@ -159,13 +166,16 @@ try {
 
 		} else {
 			// Date au format US
-			$date = explode('/',$td->innertext );
-			if ( count($date) != 3 || empty($date[2]) || empty($date[1]) || empty($date[0]) )
+			$tdate = explode('/',$td->innertext );
+			if ( count($tdate) != 3 || empty($tdate[2]) || empty($tdate[1]) || empty($tdate[0]) )
 				exit('Bad date detected in veolia web page ? ' . $td->innertext);
 			else if ( $debug ) 
 				echo "Enregistrement du ".$td->innertext."\n";
-			$date = $date[2].'-'.$date[1].'-'.$date[0];
-			if ( $date === $last_update )
+			$date = $tdate[2].'-'.$tdate[1].'-'.$tdate[0];
+			$udate = mktime(0,0,0,$tdate[1],$tdate[0],$tdate[2]);
+			if ( $debug ) 
+				echo "UNixtime de cet enregistrement = " . $udate . " \n";
+			if ( $udate >= $lupd ) 
 				$add_counter = true;
 			$conso = true;
 		}
@@ -173,7 +183,8 @@ try {
 
   }
   if (  $add_counter && $update ) { // On va mettre à jour la table DeviceStatus
-	$sql_query = "UPDATE DeviceStatus SET LastUpdate='".$update."' , sValue=".$compteur." WHERE ID=".$device_idx." AND LastUpdate<'".$update."';";
+	//$sql_query = "UPDATE DeviceStatus SET LastUpdate='".$update."' , sValue=".$compteur." WHERE ID=".$device_idx." AND LastUpdate<'".$update."';";
+	$sql_query = "UPDATE DeviceStatus SET LastUpdate='".$update."' , sValue=".$compteur." WHERE ID=".$device_idx." ;";
 	if ( $debug ) echo $sql_query . "\n";
 	$db->query($sql_query);
   }
