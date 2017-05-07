@@ -55,7 +55,9 @@ if ( !$month && date ('d') < 4 )  {
 		exit( " Erreur : Le second argument doit etre compris entre 2010 et 2030\n");
 	$dataUrl .= "?mm=".$argv[1].'/'.$argv[2] ;
         $debug = true;
-}
+} else if ( empty($argv[1]) === false ) {
+	exit (" Syntaxe : ". $argv[0] ." mm yyyy \n");
+} 
 
 require('simple_html_dom.php');
 
@@ -131,8 +133,11 @@ try {
 	echo "Dernier update du compteur  le $last_update (".$lupd.") : ".$deviceStatus['Counter']." m3 \n";
 
   // ON supprime l'entrée correspondante à hier (faites par domoticz  à 0h00 ?)
-  $yesterday = date("Y-m-d",mktime(0, 0, 0, date("m")  , date("d")-1, date("Y")));
- $db->exec("DELETE FROM Meter_Calendar WHERE Date='".date("Y-m-d",mktime(0, 0, 0, date("m")  , date("d")-1, date("Y")))."' AND DeviceRowID=".$device_idx." ;");
+  // $yesterday = date("Y-m-d",mktime(0, 0, 0, date("m")  , date("d")-1, date("Y")));
+  // $db->exec("DELETE FROM Meter_Calendar WHERE Date='".date("Y-m-d",mktime(0, 0, 0, date("m")  , date("d")-1, date("Y")))."' AND DeviceRowID=".$device_idx." ;");
+
+  // Domotics a pu modifier la valeur du compteur de la dernière entrée on va la remttre à la bonne valeur
+  $db->exec("UPDATE Meter_Calendar SET Counter=".$compteur." WHERE DeviceRowID=".$device_idx." AND Counter>".$compteur." ;");
   
   foreach ( $table->find('tr') as $tr ) {
 	$conso = false;
@@ -153,11 +158,11 @@ try {
 				}
 				//  Mise à jour avec Counter
                         	$sql_query = "UPDATE Meter_Calendar SET Counter=".$compteur." WHERE Date='".$exist['Date']."' AND DeviceRowID=".$device_idx.";";
-				$update = $exist['Date'] . ' ' . date("H:i:s");
+				$update = $exist['Date'] . ' 00:00:00';
 			} else {
 				$this_counter = $add_counter ? $compteur : 0 ;
 				$sql_query = "INSERT INTO Meter_Calendar VALUES($device_idx,".$liters.",". $this_counter .",'".$date."'); ";
-				$update = $date . ' ' . date("H:i:s");
+				$update = $date . ' 00:00:00';
 			}
 
 			if ( $debug ) echo "requete SQL : ".$sql_query ."\n";
@@ -175,7 +180,7 @@ try {
 			$udate = mktime(0,0,0,$tdate[1],$tdate[0],$tdate[2]);
 			if ( $debug ) 
 				echo "UNixtime de cet enregistrement = " . $udate . " \n";
-			if ( $udate >= $lupd ) 
+			if ( $udate > $lupd ) 
 				$add_counter = true;
 			$conso = true;
 		}
