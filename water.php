@@ -17,10 +17,14 @@ date_default_timezone_set('Europe/Paris');
 
 ######### Configuration ###################
 # identifier and password of your Veolia account
-$identifier = "1234567";
-$password = "654321";
+#$identifier = "1234567";
+$identifier = "3921758";
+#$password = "654321";
+$password = "135137";
 # Path to the domoticz sqlite database
 $sqlite = "/home/pi/domoticz.db";
+$sqlite = "/tmp/domoticz.db";
+#$sqlite = "./domoticz.db";
 # Virtual counter Idx
 $device_idx = 15;
 # Mois a importer (utiliser plutot les arguments! )
@@ -31,7 +35,7 @@ $month = null;
 
 ############## End Configuration ###########################
 
-$debug = false;
+$debug = true;
 
 # Veolia web Page
 # login page
@@ -127,14 +131,14 @@ try {
   $last_update = $update_date = $deviceStatus['Date'];
   // On calcule le last_update en Unix Time
   $lupd = explode('-',$last_update);
-  $lupd = mktime(0,0,0,$lupd[1],$lupd[2],$lupd[0]);
+  $lupd = mktime(23,59,59,$lupd[1],$lupd[2],$lupd[0]);
   $compteur = $deviceStatus['Counter'];
   if ( $debug) 
 	echo "Dernier update du compteur  le $last_update (".$lupd.") : ".$deviceStatus['Counter']." m3 \n";
 
   // ON supprime l'entrée correspondante à hier (faites par domoticz  à 0h00 ?)
-  // $yesterday = date("Y-m-d",mktime(0, 0, 0, date("m")  , date("d")-1, date("Y")));
-  // $db->exec("DELETE FROM Meter_Calendar WHERE Date='".date("Y-m-d",mktime(0, 0, 0, date("m")  , date("d")-1, date("Y")))."' AND DeviceRowID=".$device_idx." ;");
+  // $yesterday = date("Y-m-d",mktime(23,59,59, date("m")  , date("d")-1, date("Y")));
+  // $db->exec("DELETE FROM Meter_Calendar WHERE Date='".date("Y-m-d",mktime(23,59,59, date("m")  , date("d")-1, date("Y")))."' AND DeviceRowID=".$device_idx." ;");
 
   // Domotics a pu modifier la valeur du compteur de la dernière entrée on va la remttre à la bonne valeur
   $db->exec("UPDATE Meter_Calendar SET Counter=".$compteur." WHERE DeviceRowID=".$device_idx." AND Counter>".$compteur." ;");
@@ -158,11 +162,11 @@ try {
 				}
 				//  Mise à jour avec Counter
                         	$sql_query = "UPDATE Meter_Calendar SET Counter=".$compteur." WHERE Date='".$exist['Date']."' AND DeviceRowID=".$device_idx.";";
-				$update = $exist['Date'] . ' 00:00:00';
+				$update = $exist['Date'] . ' 23:59:59';
 			} else {
 				$this_counter = $add_counter ? $compteur : 0 ;
 				$sql_query = "INSERT INTO Meter_Calendar VALUES($device_idx,".$liters.",". $this_counter .",'".$date."'); ";
-				$update = $date . ' 00:00:00';
+				$update = $date . ' 23:59:59';
 			}
 
 			if ( $debug ) echo "requete SQL : ".$sql_query ."\n";
@@ -177,7 +181,7 @@ try {
 			else if ( $debug ) 
 				echo "Enregistrement du ".$td->innertext."\n";
 			$date = $tdate[2].'-'.$tdate[1].'-'.$tdate[0];
-			$udate = mktime(0,0,0,$tdate[1],$tdate[0],$tdate[2]);
+			$udate = mktime(23,59,59,$tdate[1],$tdate[0],$tdate[2]);
 			if ( $debug ) 
 				echo "UNixtime de cet enregistrement = " . $udate . " \n";
 			if ( $udate > $lupd ) 
