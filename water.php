@@ -17,16 +17,13 @@ date_default_timezone_set('Europe/Paris');
 
 ######### Configuration ###################
 # identifier and password of your Veolia account
-#$identifier = "1234567";
-$identifier = "3921758";
-#$password = "654321";
-$password = "135137";
+$identifier = "1234567";
+$password = "654321";
 # Path to the domoticz sqlite database
-$sqlite = "/home/pi/domoticz.db";
 $sqlite = "/tmp/domoticz.db";
 #$sqlite = "./domoticz.db";
 # Virtual counter Idx
-$device_idx = 15;
+$device_idx = 12;
 # Mois a importer (utiliser plutot les arguments! )
 # Importe le mois courant si null
 # Format "MM/AAAA" . Exemple :
@@ -151,7 +148,7 @@ try {
 			// [Meter_Calendar] ([DeviceRowID] BIGINT NOT NULL, [Value] BIGINT NOT NULL, [Counter] BIGINT DEFAULT 0, [Date] DATETIME DEFAULT (datetime('now','localtime')));
 
 			// l'entrée existe déjà ?
-			$exists = $db->query("SELECT Date,Counter FROM Meter_Calendar WHERE Date = '" . $date ."' ;");
+			$exists = $db->query("SELECT Date,Counter FROM Meter_Calendar WHERE Date = '" . $date ."' AND DeviceRowID=".$device_idx.";");
 			$exist = $exists->fetchArray(SQLITE3_ASSOC);
 			if ($add_counter)
 				$compteur +=  $liters;
