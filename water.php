@@ -145,6 +145,10 @@ try {
 	foreach ( $tr->find('td') as $td ) {
 		if ( $conso ) { 
 			$liters = $td->innertext ;
+			if ( $liters === '' ) {
+				if ( $debug ) echo 'date =  '. $date . " ! Non mesurée! \n";
+				continue;
+			}
 			// [Meter_Calendar] ([DeviceRowID] BIGINT NOT NULL, [Value] BIGINT NOT NULL, [Counter] BIGINT DEFAULT 0, [Date] DATETIME DEFAULT (datetime('now','localtime')));
 
 			// l'entrée existe déjà ?
@@ -180,7 +184,7 @@ try {
 			$date = $tdate[2].'-'.$tdate[1].'-'.$tdate[0];
 			$udate = mktime(23,59,59,$tdate[1],$tdate[0],$tdate[2]);
 			if ( $debug ) 
-				echo "UNixtime de cet enregistrement = " . $udate . " \n";
+				echo "date = ".$date.", UNixtime de cet enregistrement = " . $udate . " \n";
 			if ( $udate > $lupd ) 
 				$add_counter = true;
 			$conso = true;
