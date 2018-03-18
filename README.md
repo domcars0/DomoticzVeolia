@@ -1,9 +1,9 @@
-Script pour alimenter un compteur d'eau virtuel Domoticz avec les infos extraites de son espace client **![#1589F0](https://placehold.it/15/1589F0/000000?text=+) `Veolia Méditérannée`**.
+Script pour alimenter un compteur d'eau virtuel Domoticz avec les infos extraites de son espace client **![#1589F0](https://placehold.it/15/1589F0/000000?text=+) `Veolia Méditerrannée`**.
 Pour parser le site veolia, ce code utilise la librairie simple_html_dom.php (@see http://sourceforge.net/projects/simplehtmldom/)
 
 __ Prérequis:
  * Domoticz (domoticz.com)
- * Etre abonné Veolia pour l'eau et avoir ouvert son compte sur le site https://www.eau-services.com
+ * Etre abonné Veolia Méditerrannée pour l'eau et avoir ouvert son compte sur le site https://www.eau-services.com
  * PHP cli + PHP curl + PHP-sqlite (apt-get install php5-cli php5-curl php5-sqlite)
 
 __ Mise en place :
@@ -22,6 +22,6 @@ __ Mise en place :
 
 
 __ Notes
-  * Veolia ne fournit les informations de consommation du jour J qu'à J+3.
+  * Veolia Méditerrannée ne fournit les informations de consommation du jour J qu'à J+3.
   * Les informations de conso du jour en cours ne sont pas disponibles
   * Pour importer un mois particulier d'un année particulière, lancer le script water.php avec les arguments M et A ou M est le mois (compris entre 1 et 12) et A l'année (entre 2010 et 2030). Ex: la commande 'water.php 7 2015' importera les données de juillet 2015 (si elles existent sur le site)
