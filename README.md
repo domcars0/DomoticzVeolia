@@ -16,9 +16,9 @@ __ Mise en place :
   * Placer les trois fichiers water.php, water.inc (fichier de configuration) et simple_html_dom.php dans un même répertoire (exemple /home/pi/Veolia)
   * Rendre executable le fichier water.php (chmod +x water.php)
   * Editer le fichier water.inc et renseigner les variables $identifier (votre identifiant veolia),  $password (votre mot de passe sur le site veolia), $sqlite (chemin complet vers la base de données domoticz), $device_idx (Idx du capteur virtuel d'eau).
- * Créer un crontab qui lancera le script water.php une fois par jour. 
+ * Créer un crontab qui lancera le script water.php une fois par jour.  Exemple:
 
-Ex: 30 00 * * * sudo /home/pi/Veolia/water.php
+30 00 * * * sudo /home/pi/Veolia/water.php
 
 
 __ Notes
