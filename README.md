@@ -13,9 +13,9 @@ __ Mise en place :
 	- Depuis ce matériel, créer un capteur virtuel de type "Compteur" appelé "Eau" et l'activé. Retenir l'Idx de ce capteur.
 	- Dans l'onglet "Mesures", le périphérique "Eau" apparait, cliquer sur "Editer" pour changer le "Type" d'énergie, choisir "Water". 
 	- Attention , Dans "Réglages"=>"Paramètres"=>"Mètres/Compteurs", vérifier que le Compteur Diviseur de l'Eau est bien à '1000'.
-  * Placer les deux fichiers water.php et simple_html_dom.php dans un même répertoire (exemple /home/pi/Veolia)
+  * Placer les trois fichiers water.php et ster.inc (fichier de configuration) imple_html_dom.php dans un même répertoire (exemple /home/pi/Veolia)
   * Rendre executable le fichier water.php (chmod +x water.php)
-  * Editer le fichier water.php et renseigner les variables $identifier (votre identifiant veolia),  $password (votre mot de passe sur le site veolia), $sqlite (chemin complet vers la base de données domoticz), $device_idx (Idx du capteur virtuel d'eau).
+  * Editer le fichier water.inc et renseigner les variables $identifier (votre identifiant veolia),  $password (votre mot de passe sur le site veolia), $sqlite (chemin complet vers la base de données domoticz), $device_idx (Idx du capteur virtuel d'eau).
  * Créer un crontab qui lancera le script water.php une fois par jour.
 
 __ Notes
