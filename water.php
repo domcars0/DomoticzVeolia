@@ -15,24 +15,12 @@
 */
 date_default_timezone_set('Europe/Paris');
 
-######### Configuration ###################
-# identifier and password of your Veolia account
-$identifier = "1234567";
-$password = "654321";
-# Path to the domoticz sqlite database
-$sqlite = "/tmp/domoticz.db";
-#$sqlite = "./domoticz.db";
-# Virtual counter Idx
-$device_idx = 12;
-# Mois a importer (utiliser plutot les arguments! )
-# Importe le mois courant si null
-# Format "MM/AAAA" . Exemple :
-# $month = "11/2016";
-$month = null;
+# See water.inc  for configuration
+require('./water.inc');
 
-############## End Configuration ###########################
+if ( $identifier == '1234567' && $password =='654321' )
+	exit("Vous n'avez pas configuré le script? Merci d'éditer et renseigner le fichier \"water.inc\".\n");
 
-$debug = true;
 
 # Veolia web Page
 # login page
@@ -40,6 +28,8 @@ $loginUrl="https://www.eau-services.com/default.aspx";
 # Consommations
 $dataUrl="https://www.eau-services.com/mon-espace-suivi-personnalise.aspx";
 
+
+$month = null;
 // On doit importer le mois précédent à cause du J-3
 if ( !$month && date ('d') < 4 )  {
         $month = date("m/Y",mktime(0, 0, 0, date("m")  , date("d")-3, date("Y")));
