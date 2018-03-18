@@ -1,4 +1,4 @@
-Script pour alimenter un compteur d'eau virtuel Domoticz avec les infos extraites de son espace client #Veolia Méditérannée#.
+Script pour alimenter un compteur d'eau virtuel Domoticz avec les infos extraites de son espace client **![#1589F0](https://placehold.it/15/1589F0/000000?text=+) `Veolia Méditérannée`**.
 Pour parser le site veolia, ce code utilise la librairie simple_html_dom.php (@see http://sourceforge.net/projects/simplehtmldom/)
 
 __ Prérequis:
