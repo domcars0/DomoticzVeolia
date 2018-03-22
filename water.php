@@ -16,7 +16,7 @@
 date_default_timezone_set('Europe/Paris');
 
 # See water.inc  for configuration
-require('./water.inc');
+require(dirname(__FILE__).'/water.inc');
 
 if ( $identifier == '1234567' && $password =='654321' )
 	exit("Vous n'avez pas configuré le script? Merci d'éditer et renseigner le fichier \"water.inc\".\n");
