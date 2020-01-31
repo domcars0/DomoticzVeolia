@@ -25,11 +25,13 @@ if ( $identifier == '1234567' && $password =='654321' )
 # Veolia web Page
 # login page
 $loginUrl="https://www.eau-services.com/default.aspx"; 
+#$loginUrl="https://www.eau-services.com/inscription.aspx"; 
 # Consommations
 $dataUrl="https://www.eau-services.com/mon-espace-suivi-personnalise.aspx";
 
 
 $month = null;
+
 // On doit importer le mois précédent à cause du J-3
 if ( !$month && date ('d') < 4 )  {
         $month = date("m/Y",mktime(0, 0, 0, date("m")  , date("d")-3, date("Y")));
@@ -123,10 +125,6 @@ try {
   if ( $debug) 
 	echo "Dernier update du compteur  le $last_update (".$lupd.") : ".$deviceStatus['Counter']." m3 \n";
 
-  // ON supprime l'entrée correspondante à hier (faites par domoticz  à 0h00 ?)
-  // $yesterday = date("Y-m-d",mktime(23,59,59, date("m")  , date("d")-1, date("Y")));
-  // $db->exec("DELETE FROM Meter_Calendar WHERE Date='".date("Y-m-d",mktime(23,59,59, date("m")  , date("d")-1, date("Y")))."' AND DeviceRowID=".$device_idx." ;");
-
   // Domotics a pu modifier la valeur du compteur de la dernière entrée on va la remttre à la bonne valeur
   $db->exec("UPDATE Meter_Calendar SET Counter=".$compteur." WHERE DeviceRowID=".$device_idx." AND Counter>".$compteur." ;");
   
@@ -152,13 +150,12 @@ try {
 					continue; 
 				}
 				//  Mise à jour avec Counter
-                        	$sql_query = "UPDATE Meter_Calendar SET Counter=".$compteur." WHERE Date='".$exist['Date']."' AND DeviceRowID=".$device_idx.";";
-				$update = $exist['Date'] . ' 23:59:59';
+                        	$sql_query = "UPDATE Meter_Calendar SET Counter=".$compteur.", Value=".$liters." WHERE Date='".$exist['Date']."' AND DeviceRowID=".$device_idx.";";
 			} else {
 				$this_counter = $add_counter ? $compteur : 0 ;
 				$sql_query = "INSERT INTO Meter_Calendar VALUES($device_idx,".$liters.",". $this_counter .",'".$date."'); ";
-				$update = $date . ' 23:59:59';
 			}
+			$update = $date . ' 23:59:59';
 
 			if ( $debug ) echo "requete SQL : ".$sql_query ."\n";
 			// Et on insert.
