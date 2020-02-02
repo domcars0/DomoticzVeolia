@@ -156,8 +156,10 @@ foreach ( $table as $entry ) {
 	$values = explode(';',$entry);
 	// Date au format US
 	$tdate = explode('/',$values[0] );
-	if ( count($tdate) != 3 || empty($tdate[2]) || empty($tdate[1]) || empty($tdate[0]) )
- 		exit('Bad date detected in veolia web page ? ' . $values[0]);
+	if ( count($tdate) != 3 || empty($tdate[2]) || empty($tdate[1]) || empty($tdate[0]) ) {
+		$db->close();
+ 		exit("Bad data detected in veolia page ?\n " . $values[0] . "\n");
+	}
 	$sql_date = $tdate[2].'-'.$tdate[1].'-'.$tdate[0];
 	$date = new DateTime($sql_date);
 	$date->setTime(23,55,00);
@@ -339,4 +341,3 @@ if ( $switch_info ) {
 }
 
 $db->close();
-unset($db);
