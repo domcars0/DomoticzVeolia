@@ -318,8 +318,7 @@ while ( $day <= $yesterday ) {
        // On met à jour DeviceStatus
        if ( $day > $lastUpdate ) {
        		$requete = "UPDATE DeviceStatus SET LastUpdate='".$date." 23:59:59' , sValue=".$compteur." WHERE ID=".$device_idx." ;";
-		if ( empty($switch_idx) === false && is_numeric($switch_idx) ) 
-			$switch_info = true;
+		$switch_info = true;
 		if ( $debug ) 
 			print ($requete."\n");
 		$sql_meter .= $requete;
@@ -333,11 +332,15 @@ $db->exec($sql_meter);
 curl_close($ch);
 
 if ( $switch_info ) {
+	if ( empty($switch_idx) === false && is_numeric($switch_idx) ) {
 # TABLE [LightingLog] ([DeviceRowID] BIGINT(10) NOT NULL, [nValue] INTEGER DEFAULT 0, [sValue] VARCHAR(200), [Date] DATETIME DEFAULT (datetime('now','localtime')), [User] VARCHAR(100) DEFAULT (''));
-	$sql_exec = " INSERT INTO LightingLog ('DeviceRowID','sValue') Values ('".$switch_idx."','0');";
-	$db->exec($sql_exec);
-      	if ( $debug )
-               	print ($sql_exec."\n");
-}
-
+		$sql_exec = " INSERT INTO LightingLog ('DeviceRowID','sValue') Values ('".$switch_idx."','0');";
+		$db->exec($sql_exec);
+      		if ( $debug )
+               		print ($sql_exec."\n");
+	} else 
+		echo "Nouvelles données importées. Les données, jusqu'à la date " . $date . " incluse, sont disponibles. \n";
+} else 
+	echo "Pas de nouvelles données importées. \n";
+	
 $db->close();
