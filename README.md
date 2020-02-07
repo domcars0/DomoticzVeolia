@@ -17,7 +17,8 @@ __ Mise en place :
   * Editer le fichier water.inc et renseigner les variables $identifier (votre identifiant veolia),  $password (votre mot de passe sur le site veolia), $sqlite (chemin complet vers la base de données domoticz), $device_idx (Idx du capteur virtuel d'eau).
  * Créer un crontab qui lancera le script water.php une fois par jour.  Exemple:
 
-30 00 * * * sudo /home/pi/Veolia/water.php
+30 06 * * * sudo /home/pi/Veolia/water.php
+(NB: La mise à jour des données sur le site Veolia semblent se faire vers 6h00)
 
 
 __ Notes
