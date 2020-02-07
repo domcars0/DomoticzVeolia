@@ -9,7 +9,7 @@ __ Mise en place :
   * Se créer un compte sur le site veolia https://www.eau-services.com
   * Domoticz :
 	- Créer un matériel de type "Dummy" (virtuel) appelé "Veolia"
-	- Depuis ce matériel, créer un capteur virtuel de type "Compteur" appelé "Eau" et l'activé. Retenir l'Idx de ce capteur.
+	- Depuis ce matériel, créer un capteur virtuel de type "Compteur" appelé "Eau" et l'activer. Retenir l'Idx de ce capteur.
 	- Dans l'onglet "Mesures", le périphérique "Eau" apparait, cliquer sur "Editer" pour changer le "Type" d'énergie, choisir "Water". 
 	- Attention , Dans "Réglages"=>"Paramètres"=>"Mètres/Compteurs", vérifier que le Compteur Diviseur de l'Eau est bien à '1000'.
   * Placer les deux fichiers water.php et water.inc (fichier de configuration) dans un même répertoire (exemple /home/pi/Veolia)
