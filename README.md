@@ -18,6 +18,7 @@ __ Mise en place :
  * Créer un crontab qui lancera le script water.php une fois par jour.  Exemple:
 
 30 06 * * * sudo /home/pi/Veolia/water.php
+
 (NB: La mise à jour des données sur le site Veolia semblent se faire vers 6h00)
 
 
