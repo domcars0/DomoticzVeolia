@@ -19,10 +19,10 @@ __ Mise en place :
 
 30 06 * * * sudo /home/pi/Veolia/water.php
 
-(NB: La mise à jour des données sur le site Veolia semblent se faire vers 6h00)
 
 
 __ Notes
   * Veolia Méditerrannée ne fournit les informations de consommation horaire du jour J qu'à J+1.
   * Les informations de conso du jour en cours ne sont pas disponibles
+  * La mise à disposition des données de consommation horaire de la veille sur le site Veolia semblent se faire vers 6h00
   * Pour importer un mois particulier d'un année particulière, lancer le script water.php avec les arguments mm et aaaa ou mm est le mois (compris entre 01 et 12) et aaaa l'année (entre 2010 et 2030). Ex: la commande 'water.php 07 2015' importera les données de juillet 2015 (si elles existent sur le site)
