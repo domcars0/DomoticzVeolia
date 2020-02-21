@@ -28,17 +28,25 @@ $loginUrl="https://www.eau-services.com/default.aspx";
 $dataUrl="https://www.eau-services.com/mon-espace-suivi-personnalise.aspx";
 
 $doday = false;
+$pgm = array_shift($argv);
+if ( empty($argv[2]) === false && $argv[2] === "debug" ) 
+	$debug = true;
+else if (  empty($argv[0]) === false && $argv[0] === "debug" ) {
+	array_shift($argv);
+	$debug = true;
+}
 
-if ( empty($argv[1]) === false && is_numeric($argv[1])
-                &&  empty($argv[2]) === false && is_numeric($argv[2]) )  {
-        if ( $argv[1] > 12 || $argv[1] < 1 )
-                exit( " Erreur : Le premier argument doit etre compris entre 01 et 12\n");
-        if ( $argv[2] < 2010 || $argv[2] > 2030 )
-                exit( " Erreur : Le second argument doit etre compris entre 2010 et 2030\n");
-	$SQLyearMonth =  $argv[2].'-'.$argv[1];
-        $dataMonthUrl = $dataUrl . "?ex=".$argv[1]."/".$argv[2]."&mm=".$argv[1]."/".$argv[2];
-} else if ( empty($argv[1]) === false ) {
-        exit (" Syntaxe : ". $argv[0] ." mm yyyy \n");
+
+if ( empty($argv[0]) === false && is_numeric($argv[0])
+                &&  empty($argv[1]) === false && is_numeric($argv[1]) )  {
+        if ( $argv[0] > 12 || $argv[0] < 1 )
+                exit( " Erreur : Le premier argument numérique (mois) doit etre compris entre 01 et 12\n");
+        if ( $argv[1] < 2010 || $argv[1] > 2030 )
+                exit( " Erreur : Le second argument numérique (année) doit etre compris entre 2010 et 2030\n");
+	$SQLyearMonth =  $argv[1].'-'.$argv[0];
+        $dataMonthUrl = $dataUrl . "?ex=".$argv[0]."/".$argv[1]."&mm=".$argv[0]."/".$argv[1];
+} else if ( empty($argv[0]) === false ) {
+        exit (" Syntaxe : ". $pgm ." [mm yyyy] [debug] \n");
 } else if ( date ('d') < 4 )  {
 // On doit importer le mois précédent à cause du J-3
         $month_year = date("m/Y",mktime(0, 0, 0, date("m")  , date("d")-3, date("Y")));
@@ -52,6 +60,7 @@ if ( empty($argv[1]) === false && is_numeric($argv[1])
 	// On va tenter le csv par jour
 	$doday = true;
 }
+
 
 //login form action url
 $post = "login=".$identifier."&pass=".$password;
@@ -88,8 +97,17 @@ $table = explode("\n",$csv);
 unset ($table[0]);
 
 // Prepare to parse the CSV
-if ( $debug ) 
-	print_r ($table) ;
+if ( $debug )  {
+	print "Consommations journalières du fichier Veolia Med pour le mois ".$SQLyearMonth." : \n";
+	foreach ( $table as $key => $info ) {
+		if ( empty($info) === false ) {
+			$c = split(';',$info);
+			print "Le ".$c[0]." : ".$c[1] ." litre(s)\n";
+		} else 
+			unset($table[$key]);
+	}
+	// print_r ($table) ;
+}
 
 
 // Open domoticz database
@@ -109,8 +127,8 @@ $check =  $results->fetchArray(SQLITE3_ASSOC);
 if ( empty($check['name']) ) 
 	exit("La base de donnée $sqlite semble corrompue ou n'est pas une BdD domoticz?");
 
-# Indique si on insere une entree dans la table LightingLog indiquant qu'une MaJ des donnees a eu lieu
-$switch_info = false;
+# Indique si de nouvelles donnees ont été importées
+$new_data = false;
 
 // Transaction
 $update = '';
@@ -122,7 +140,7 @@ $compteur = empty($deviceStatus['Counter']) ? 0 : $deviceStatus['Counter'];
 $deviceLastUpdate = empty($deviceStatus['Date']) ? "2000-01-01" : $deviceStatus['Date'];
 
 if ( $debug) 
-	echo "Dernier update du compteur  le ". $deviceLastUpdate ." : " . $compteur . " m3 \n";
+	echo "Dernier update du compteur  le ". $deviceLastUpdate ." : " . $compteur . " litres (valeur d'ajustement = ".$AddjValue." litres ).\n";
 
 // Va nous servir si $import_day = true
 $lastUpdate = new DateTime($deviceLastUpdate);
@@ -133,6 +151,14 @@ $lastUpdate->setTime(23,55,00);
 
   // Domotics a pu modifier la valeur du compteur de la dernière entrée on va la remettre à la bonne valeur
 $db->exec("UPDATE Meter_Calendar SET Counter=".$compteur." WHERE DeviceRowID=".$device_idx." AND Counter>".$compteur." ;");
+
+// Combien de jour d'historique pour les compteurs à 5mns (Eau)
+$results = $db->query("SELECT nValue FROM Preferences WHERE Key=\"5MinuteHistoryDays\" ;");
+$Prefs = $results->fetchArray(SQLITE3_ASSOC);
+$historyDays = $Prefs['nValue'];
+if ( $debug) 
+	print "Historique des compteurs = ".$historyDays." jour(s).\n";
+
 
 // Quelles sont les entrées de la table Meter_Calendar qui sont déjà en BdD 
 $calendarEntries = array(); // tableau : Date=>Counter des 31 dernieres entrees (1mois)
@@ -171,15 +197,15 @@ foreach ( $table as $entry ) {
 
 	if ( $liters < 0  ) {
 		$csv_counter = -$liters;
-		if ( $debug ) 
-			print ("Compteur!! ".$csv_counter."\n");
 		if ( $updateDeviceStatus ) 
 			$compteur = $csv_counter - $AddjValue ; // Recupere la valeur du compteur ?
+		if ( $debug ) 
+			print (">>> Valeur du Compteur d'eau le ".$date->format('d/m/Y')." = ".$csv_counter." \n");
 		continue ;
 	} else if ( $csv_counter > 0 ) {
 		$liters -= $csv_counter;
 		if ( $debug ) 
-			print ("End compteur! ".$liters."\n");
+			print (">>> Consommation effective du ".$date->format('d/m/Y')." = ".$liters." litre(s)\n");
   		$csv_counter = 0; 
 	}
 
@@ -190,12 +216,15 @@ foreach ( $table as $entry ) {
 		$this_counter =  0;
 
 	if ( array_key_exists($sql_date, $calendarEntries) ) {
-        	$requete = "UPDATE Meter_Calendar SET Counter=".$this_counter.", Value=".$liters." WHERE Date='".$sql_date."' AND DeviceRowID=".$device_idx.";";
+        	$requete = " UPDATE Meter_Calendar SET Counter=".$this_counter.", Value=".$liters." WHERE Date='".$sql_date."' AND DeviceRowID=".$device_idx.";";
 	} else {
-                $requete = "INSERT INTO Meter_Calendar VALUES($device_idx,".$liters.",". $this_counter .",'".$sql_date."'); ";
+                $requete = " INSERT INTO Meter_Calendar VALUES($device_idx,".$liters.",". $this_counter .",'".$sql_date."'); ";
 	}
 	$sql_calendar .= $requete ;
-	if ( $debug ) echo "requete SQL : ".$requete ."\n";
+	if ( $debug ) {
+		echo ">" . $requete ."\n";
+		usleep(200000);
+	}
 
 }
 
@@ -206,22 +235,25 @@ if ( $updateDeviceStatus ) {
 	$sql_date = $lastUpdate->format('Y-m-d H:i:s');
 	$requete = " UPDATE DeviceStatus SET LastUpdate='".$sql_date."' , sValue=".$compteur." WHERE ID=".$device_idx." ;";
 	if ( $debug ) 
-		echo $requete . "\n";
+		echo ">" . $requete . "\n";
 	$sql_calendar .= $requete;
 }
 
 if ( $doday !== true ) {
 	// On nettoie la table Meter  des entres d'aujourd'hui (Domoticz ??)
-	$sql_calendar .= " DELETE FROM Meter WHERE DeviceRowID=".$device_idx." AND Date LIKE '".date('Y')."-".date('m')."-".date('d')." %' ; ";
+	$requete = " DELETE FROM Meter WHERE DeviceRowID=".$device_idx." AND Date LIKE '".date('Y')."-".date('m')."-".date('d')." %' ; ";
+	$sql_calendar .= $requete;
   	// Et on execute cette requete
 	$db->exec($sql_calendar); 
-	exit();
+	if ( $debug )
+                echo ">". $requete . "\n";
+	exit("Mise à jour des données de consommation journalières effectuée avec succès.\nPour les données de consommation horaires, merci de ne pas passer de paramètres.");
 } else 
 	$db->exec($sql_calendar);
 	
-// On ne ramène que les 3 derniers imports (sinon voir le code water_day.php) 
+// On ne ramène que les $historyDays derniers jours de conso horaire
 $day = new DateTime();
-$day->sub(new DateInterval('P3D'))->setTime(23,55,00);
+$day->sub(new DateInterval('P'.$historyDays.'D'))->setTime(23,55,00);
 
 $yesterday = new DateTime();
 $yesterday->add(DateInterval::createFromDateString('yesterday'))->setTime(23,55,00);
@@ -236,8 +268,7 @@ if ( $debug ) {
 // Compteur 'virtuel' pour remplir la table Meter
 $virt_counter = 0 ;
 
-// ON vide la Table Meter
-$sql_meter = " DELETE FROM Meter WHERE DeviceRowID=".$device_idx." ;";
+$sql_meter = "";
 
 while ( $day <= $yesterday ) {
         $insert = true;
@@ -245,6 +276,7 @@ while ( $day <= $yesterday ) {
         $mois = $day->format('m');
         $an = $day->format('Y');
         $dataDayUrl = $dataUrl . "?ex=".$mois.'/'.$an.'&mm='.$mois.'/'.$an.'&d='.$jour;
+
 
         if ( $debug )
                 print ("Data URL = $dataDayUrl \n");
@@ -259,25 +291,51 @@ while ( $day <= $yesterday ) {
         unset($csvtable[0]) ;
 
         $date = $day->format('Y-m-d');
+
+	// On supprime l'entrée de Meter_Calendar générée par Domoticz
+	if ( $day == $yesterday )  {
+		$requete = " DELETE From Meter_Calendar WHERE DeviceRowID=".$device_idx." AND Date = \"".$date."\" ; ";
+		$sql_meter .= $requete;
+		if ( $debug ) 
+			print ">" . $requete."\n";
+		if ( isset($calendarEntries[$date]) ) 
+			unset ($calendarEntries[$date]);
+	}
+
+	
         // Tableau des conso (jour=>conso)
         $day_table = array();
 
+	if ( $debug )  {
+		print "Analyse du fichier CSV de consommations horaires du ".$date." : .";
+		usleep(100000);
+	}
         foreach ( $csvtable as $value )  {
                 if ( empty($value) == false ) {
                         $vals = explode(';',$value);
                         if ( !isset($vals[1]) || !isset($vals[2]) || !is_numeric($vals[1]) || !is_numeric($vals[2]) ) {
-                                 print "Erreur dans le fichier csv de la date $date  : \n ---------- \n " . $csv ." \n ----------------\n";
+                                 print "Erreur(s) dans le fichier csv :\n ---------- \n " . $csv ." \n ----------------\n";
                                  $day->add(new DateInterval('P1D'));
                                  $insert = false ;
                                  break;
                         }
                         $day_table[$vals[1]] = $vals[2]; // heure => conso
                 }
+		if ( $debug )  {
+			print ".";
+			usleep(100000);
+		}
         }
         if ( ! $insert )
                 continue;
-
+	if ( $debug ) 
+		print ": OK\n";
         // print_r($day_table); exit();
+	// ON vide la Table Meter pour le jour $date
+	$requete = " DELETE FROM Meter WHERE DeviceRowID=".$device_idx." AND Date LIKE \"".$date." %\" ;";
+	$sql_meter .= $requete;
+	if ( $debug ) 
+		print ">".$requete."\n";
 
 // Transaction
         // Calcule la conso totale du Jour pour la table Meter_Calendar
@@ -295,7 +353,7 @@ while ( $day <= $yesterday ) {
                         $requete = " INSERT INTO Meter Values ('".$device_idx."',".$virt_counter.",0,'".$date." ".$hour.":".str_pad($min,2, '0', STR_PAD_LEFT)."') ;";
 			$sql_meter .= $requete ;
                         if ( $debug && $min == 55 ) {
-                        	print ($requete . "\n");
+                        	print (">" . $requete . "\n");
 				usleep(200000);
 			}
                         $min += 5;
@@ -306,21 +364,21 @@ while ( $day <= $yesterday ) {
         // Si besoin, on met à jour Meter_Calendar & DeviceStatus
         // Ce jour n'est pas dans la table Meter_Calendar
         if ( ! array_key_exists($date, $calendarEntries) ) {
-        	$requete = "INSERT INTO Meter_Calendar Values (".$device_idx.",".$day_conso.",".$compteur.",'".$date."') ;";
+        	$requete = " INSERT INTO Meter_Calendar Values (".$device_idx.",".$day_conso.",".$compteur.",'".$date."') ;";
 	} else if ( $calendarEntries[$date] != $day_conso ) {
-        	$requete = "UPDATE Meter_Calendar SET Value=".$day_conso." WHERE Date='".$date."' AND DeviceRowID=".$device_idx." ;";
+        	$requete = " UPDATE Meter_Calendar SET Value=".$day_conso." WHERE Date='".$date."' AND DeviceRowID=".$device_idx." ;";
 	} else
 		$requete = "";
-	if ( $debug ) 
-		print ($requete."\n");
+	if ( $debug && empty($requete) === false )
+		print (">" . $requete . "\n");
 	$sql_meter .= $requete;
 
        // On met à jour DeviceStatus
        if ( $day > $lastUpdate ) {
-       		$requete = "UPDATE DeviceStatus SET LastUpdate='".$date." 23:59:59' , sValue=".$compteur." WHERE ID=".$device_idx." ;";
-		$switch_info = true;
+       		$requete = " UPDATE DeviceStatus SET LastUpdate='".$date." 23:59:59' , sValue=".$compteur." WHERE ID=".$device_idx." ;";
+		$new_data = true;
 		if ( $debug ) 
-			print ($requete."\n");
+			print (">". $requete . "\n");
 		$sql_meter .= $requete;
        }
 
@@ -331,13 +389,14 @@ while ( $day <= $yesterday ) {
 $db->exec($sql_meter);
 curl_close($ch);
 
-if ( $switch_info ) {
-	if ( empty($switch_idx) === false && is_numeric($switch_idx) ) {
 # TABLE [LightingLog] ([DeviceRowID] BIGINT(10) NOT NULL, [nValue] INTEGER DEFAULT 0, [sValue] VARCHAR(200), [Date] DATETIME DEFAULT (datetime('now','localtime')), [User] VARCHAR(100) DEFAULT (''));
+
+if ( $new_data ) {
+	if ( empty($switch_idx) === false && is_numeric($switch_idx) ) {
 		$sql_exec = " INSERT INTO LightingLog ('DeviceRowID','sValue') Values ('".$switch_idx."','0');";
 		$db->exec($sql_exec);
       		if ( $debug )
-               		print ($sql_exec."\n");
+               		print (">".$sql_exec."\n");
 	} else 
 		echo "Nouvelles données importées. Les données, jusqu'à la date " . $date . " incluse, sont disponibles. \n";
 } else 
