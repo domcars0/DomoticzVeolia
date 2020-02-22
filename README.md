@@ -1,4 +1,5 @@
 Script pour alimenter un compteur d'eau virtuel Domoticz avec les infos extraites de son espace client **![#1589F0](https://placehold.it/15/1589F0/000000?text=+) `Veolia Méditerrannée`**.
+ATTENTION: Ce script n'est pas un 'script Domoticz' au sens propre du terme. Les données n'etant pas disponibles en temps réel, ce script ecrit directement dans la base de données de Domoticz, ce que ne permettent pas les 'scripts Domoticz' (ni les plugins). Il n'est donc pas lancé automatiquemment par Domoticz, mais par le demon de cron.
 
 __ Prérequis:
  * Domoticz (domoticz.com)
