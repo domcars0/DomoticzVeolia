@@ -381,7 +381,7 @@ while ( $Hday <= $yesterday ) {
 	$sql_meter .= $requete;
 
        // On met à jour DeviceStatus
-       if ( $Hday > $lastUpdate ) {
+       if ( $Hday >= $lastUpdate ) {
        		$requete = " UPDATE DeviceStatus SET LastUpdate='".$date." 23:59:59' , sValue=".$compteur." WHERE ID=".$device_idx." ;";
 		$new_data = true;
 		if ( $debug ) 
