@@ -95,7 +95,6 @@ $csv = curl_exec($ch);
 $table = explode("\n",$csv);
 // Vire les commentaires en haut du fichier
 unset ($table[0]);
-
 // Prepare to parse the CSV
 if ( $debug )  {
 	print "Consommations journalières du fichier Veolia Med pour le mois ".$SQLyearMonth." : \n";
@@ -108,7 +107,6 @@ if ( $debug )  {
 	}
 	// print_r ($table) ;
 }
-
 
 // Open domoticz database
 if ( ! file_exists($sqlite))
@@ -132,8 +130,8 @@ $new_data = false;
 
 // Transaction
 $update = '';
-  // On initialise le compteur avec la valeur sValue de la table DeviceStatus
-$results = $db->query("SELECT date(LastUpdate) as Date ,sValue as Counter, AddjValue from DeviceStatus where  ID=".$device_idx." ;");
+  // On recupere la valeur d'ajustement du DeviceStatus et la date du lastUpdate
+$results = $db->query("SELECT date(LastUpdate) as Date, sValue as Counter, AddjValue from DeviceStatus where  ID=".$device_idx." ;");
 $deviceStatus = $results->fetchArray(SQLITE3_ASSOC);
 $AddjValue = 1000 * $deviceStatus['AddjValue'];
 $compteur = empty($deviceStatus['Counter']) ? 0 : $deviceStatus['Counter'];
@@ -175,6 +173,8 @@ $csv_counter = 0; // lorsque la valeur de conso du jour est negative dans le csv
 $liters = null;
 $updateDeviceStatus = false;
 $sql_calendar = "";
+// ON va récupérer le compteur depuis la table Meter_Calandar
+$compteur = 0;
 // On construite une requete SQL multiple
 foreach ( $table as $entry ) {
 	if ( empty($entry) )
@@ -190,17 +190,25 @@ foreach ( $table as $entry ) {
 	$date = new DateTime($sql_date);
 	$date->setTime(23,55,00);
 
-	if ( $date > $lastUpdate ) 
-		$updateDeviceStatus = true;
+	if ( empty($compteur)) { // Récupere la valeur du compteur de la veille;
+		$prev_date = new DateTime($sql_date);
+		$prev_date->sub(new DateInterval('P1D'));
+		$result = $db->query("SELECT Counter FROM Meter_Calendar WHERE DeviceRowID=".$device_idx." and Date='".$prev_date->format('Y-m-d')."' ;");
+		$c =  $result->fetchArray(SQLITE3_ASSOC);
+		$compteur = $c['Counter'];
+		if ( $debug )  {
+			$prev_count = $compteur + $AddjValue;
+			print (">>> Valeur du compteur à la date du " . $prev_date->format('d/m/Y') . " : " . $prev_count . "\n");
+		}
+	}
+
 
 	$liters = $values[1];
 
 	if ( $liters < 0  ) {
 		$csv_counter = -$liters;
-		if ( $updateDeviceStatus ) 
-			$compteur = $csv_counter - $AddjValue ; // Recupere la valeur du compteur ?
-		if ( $debug ) 
-			print (">>> Valeur du Compteur d'eau le ".$date->format('d/m/Y')." = ".$csv_counter." \n");
+		$compteur  =  $csv_counter - $AddjValue ;
+		print (">>> Valeur du Compteur , selon Veolia, le ".$date->format('d/m/Y')." = ".$csv_counter." \n");
 		continue ;
 	} else if ( $csv_counter > 0 ) {
 		$liters -= $csv_counter;
@@ -209,16 +217,13 @@ foreach ( $table as $entry ) {
   		$csv_counter = 0; 
 	}
 
-	if ($updateDeviceStatus) {
-        	$compteur +=  $liters;
-		$this_counter = $compteur;// ca sert pas à grand chose...
-	} else
-		$this_counter =  0;
-
+	if (empty($compteur) === false )
+               	$compteur  +=  $liters;
+	
 	if ( array_key_exists($sql_date, $calendarEntries) ) {
-        	$requete = " UPDATE Meter_Calendar SET Counter=".$this_counter.", Value=".$liters." WHERE Date='".$sql_date."' AND DeviceRowID=".$device_idx.";";
+        	$requete = " UPDATE Meter_Calendar SET Counter=".$compteur.", Value=".$liters." WHERE Date='".$sql_date."' AND DeviceRowID=".$device_idx.";";
 	} else {
-                $requete = " INSERT INTO Meter_Calendar VALUES($device_idx,".$liters.",". $this_counter .",'".$sql_date."'); ";
+                $requete = " INSERT INTO Meter_Calendar VALUES($device_idx,".$liters.",". $compteur .",'".$sql_date."'); ";
 	}
 	$sql_calendar .= $requete ;
 	if ( $debug ) {
@@ -228,10 +233,9 @@ foreach ( $table as $entry ) {
 
 }
 
-// On va eventuellement mettre à jour la table DeviceStatus
-if ( $updateDeviceStatus ) {
-	if ( $date > $lastUpdate ) 
-		$lastUpdate = $date ;
+// On va mettre à jour la table DeviceStatus
+if ( $date > $lastUpdate  && empty($compteur) === false )  {
+	$lastUpdate = $date ;
 	$sql_date = $lastUpdate->format('Y-m-d H:i:s');
 	$requete = " UPDATE DeviceStatus SET LastUpdate='".$sql_date."' , sValue=".$compteur." WHERE ID=".$device_idx." ;";
 	if ( $debug ) 
@@ -239,28 +243,32 @@ if ( $updateDeviceStatus ) {
 	$sql_calendar .= $requete;
 }
 
-if ( $doday !== true ) {
+if ( $doday !== true ) { // Pas de conso horaire
+	$db->exec($sql_calendar); 
+	exit("Mise à jour des données de consommation journalières effectuée avec succès.\nPour les données de consommations horaires, ne pas passer de paramètres.\n");
+} else  {
 	// On nettoie la table Meter  des entres d'aujourd'hui (Domoticz ??)
 	$requete = " DELETE FROM Meter WHERE DeviceRowID=".$device_idx." AND Date LIKE '".date('Y')."-".date('m')."-".date('d')." %' ; ";
-	$sql_calendar .= $requete;
-  	// Et on execute cette requete
-	$db->exec($sql_calendar); 
-	if ( $debug )
+	if ( $debug ) 
                 echo ">". $requete . "\n";
-	exit("Mise à jour des données de consommation journalières effectuée avec succès.\nPour les données de consommation horaires, merci de ne pas passer de paramètres.");
-} else 
+	$sql_calendar .= $requete;
 	$db->exec($sql_calendar);
+}
 	
-// On ne ramène que les $historyDays derniers jours de conso horaire
-$day = new DateTime();
-$day->sub(new DateInterval('P'.$historyDays.'D'))->setTime(23,55,00);
+// On ramène au moins les $historyDays derniers jours de conso horaire
+$Hday = new DateTime();
+$Hday->sub(new DateInterval('P'.$historyDays.'D'))->setTime(23,55,00);
+$date->add(new DateInterval('P1D'));
+
+if ( $date < $Hday )
+	$Hday = $date;
 
 $yesterday = new DateTime();
 $yesterday->add(DateInterval::createFromDateString('yesterday'))->setTime(23,55,00);
 
 
 if ( $debug ) {
-        print "Start Day = ". $day->format("d-m-Y H:i:s")."\n";
+        print "Start Day = ". $Hday->format("d-m-Y H:i:s")."\n";
         print "LastUpdate = ".$lastUpdate->format("d-m-Y H:i:s")."\n";
         print "Yesterday = ".$yesterday->format("d-m-Y H:i:s ")."\n";
 }
@@ -270,11 +278,11 @@ $virt_counter = 0 ;
 
 $sql_meter = "";
 
-while ( $day <= $yesterday ) {
+while ( $Hday <= $yesterday ) {
         $insert = true;
-        $jour = $day->format('d');
-        $mois = $day->format('m');
-        $an = $day->format('Y');
+        $jour = $Hday->format('d');
+        $mois = $Hday->format('m');
+        $an = $Hday->format('Y');
         $dataDayUrl = $dataUrl . "?ex=".$mois.'/'.$an.'&mm='.$mois.'/'.$an.'&d='.$jour;
 
 
@@ -290,10 +298,10 @@ while ( $day <= $yesterday ) {
 //Inutile
         unset($csvtable[0]) ;
 
-        $date = $day->format('Y-m-d');
+        $date = $Hday->format('Y-m-d');
 
 	// On supprime l'entrée de Meter_Calendar générée par Domoticz
-	if ( $day == $yesterday )  {
+	if ( $Hday == $yesterday )  {
 		$requete = " DELETE From Meter_Calendar WHERE DeviceRowID=".$device_idx." AND Date = \"".$date."\" ; ";
 		$sql_meter .= $requete;
 		if ( $debug ) 
@@ -315,7 +323,7 @@ while ( $day <= $yesterday ) {
                         $vals = explode(';',$value);
                         if ( !isset($vals[1]) || !isset($vals[2]) || !is_numeric($vals[1]) || !is_numeric($vals[2]) ) {
                                  print "Erreur(s) dans le fichier csv :\n ---------- \n " . $csv ." \n ----------------\n";
-                                 $day->add(new DateInterval('P1D'));
+                                 $Hday->add(new DateInterval('P1D'));
                                  $insert = false ;
                                  break;
                         }
@@ -345,7 +353,7 @@ while ( $day <= $yesterday ) {
                 $min = 0 ;
                 while ( $min < 60 ) {
                 	if ( $min == 55 ) {
-                        	if ( $day > $lastUpdate )  // ON incremente le VRAI compteur qu'à partir du lastUpdate
+                        	if ( $Hday > $lastUpdate )  // ON incremente le VRAI compteur qu'à partir du lastUpdate
                                		$compteur += $liters;
                                 $day_conso += $liters ;
                                 $virt_counter += $liters < 0 ? 0 : $liters;
@@ -374,7 +382,7 @@ while ( $day <= $yesterday ) {
 	$sql_meter .= $requete;
 
        // On met à jour DeviceStatus
-       if ( $day > $lastUpdate ) {
+       if ( $Hday > $lastUpdate ) {
        		$requete = " UPDATE DeviceStatus SET LastUpdate='".$date." 23:59:59' , sValue=".$compteur." WHERE ID=".$device_idx." ;";
 		$new_data = true;
 		if ( $debug ) 
@@ -383,7 +391,7 @@ while ( $day <= $yesterday ) {
        }
 
 
-        $day->add(new DateInterval('P1D'));
+        $Hday->add(new DateInterval('P1D'));
 }
 
 $db->exec($sql_meter);
