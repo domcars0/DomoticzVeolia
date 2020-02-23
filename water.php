@@ -222,6 +222,7 @@ foreach ( $table as $entry ) {
 	} else {
                 $requete = " INSERT INTO Meter_Calendar VALUES($device_idx,".$liters.",". $compteur .",'".$sql_date."'); ";
 	}
+	$calendarEntries[$sql_date] = $compteur;
 	$sql_calendar .= $requete ;
 	if ( $debug ) {
 		echo ">" . $requete ."\n";
@@ -262,18 +263,16 @@ if ( $date < $Hday )
 $yesterday = new DateTime();
 $yesterday->add(DateInterval::createFromDateString('yesterday'))->setTime(23,55,00);
 
-
 if ( $debug ) {
         print "Start Day = ". $Hday->format("d-m-Y H:i:s")."\n";
         print "LastUpdate = ".$lastUpdate->format("d-m-Y H:i:s")."\n";
         print "Yesterday = ".$yesterday->format("d-m-Y H:i:s ")."\n";
 }
 
-// Compteur 'virtuel' pour remplir la table Meter
-$virt_counter = 0 ;
+// Le compteur pour le premier jour d'import
+$compteur = $calendarEntries [$Hday->format('Y-m-d')];
 
 $sql_meter = "";
-
 while ( $Hday <= $yesterday ) {
         $insert = true;
         $jour = $Hday->format('d');
@@ -318,7 +317,9 @@ while ( $Hday <= $yesterday ) {
                 if ( empty($value) == false ) {
                         $vals = explode(';',$value);
                         if ( !isset($vals[1]) || !isset($vals[2]) || !is_numeric($vals[1]) || !is_numeric($vals[2]) ) {
-                                 print "Erreur(s) dans le fichier csv :\n ---------- \n " . $csv ." \n ----------------\n";
+                                 print "Erreur(s) dans le fichier csv du ".$Hday->format('d/m/Y')." (ignoré)\n";
+				if ( $debug )
+					print " ---------- \n " . $csv ." \n ----------------\n";
                                  $Hday->add(new DateInterval('P1D'));
                                  $insert = false ;
                                  break;
@@ -349,12 +350,10 @@ while ( $Hday <= $yesterday ) {
                 $min = 0 ;
                 while ( $min < 60 ) {
                 	if ( $min == 55 ) {
-                        	if ( $Hday > $lastUpdate )  // ON incremente le VRAI compteur qu'à partir du lastUpdate
-                               		$compteur += $liters;
                                 $day_conso += $liters ;
-                                $virt_counter += $liters < 0 ? 0 : $liters;
+                                $compteur += $liters < 0 ? 0 : $liters;
                         }
-                        $requete = " INSERT INTO Meter Values ('".$device_idx."',".$virt_counter.",0,'".$date." ".$hour.":".str_pad($min,2, '0', STR_PAD_LEFT)."') ;";
+                        $requete = " INSERT INTO Meter Values ('".$device_idx."',".$compteur.",0,'".$date." ".$hour.":".str_pad($min,2, '0', STR_PAD_LEFT)."') ;";
 			$sql_meter .= $requete ;
                         if ( $debug && $min == 55 ) {
                         	print (">" . $requete . "\n");
@@ -363,14 +362,13 @@ while ( $Hday <= $yesterday ) {
                         $min += 5;
                 }
         }
-	$compteur += $day_conso;
 
  // [Meter_Calendar] ([DeviceRowID] BIGINT NOT NULL, [Value] BIGINT NOT NULL, [Counter] BIGINT DEFAULT 0, [Date] DATETIME DEFAULT (datetime('now','localtime')));
         // Si besoin, on met à jour Meter_Calendar & DeviceStatus
         // Ce jour n'est pas dans la table Meter_Calendar
         if ( ! array_key_exists($date, $calendarEntries) ) {
         	$requete = " INSERT INTO Meter_Calendar Values (".$device_idx.",".$day_conso.",".$compteur.",'".$date."') ;";
-	} else if ( $calendarEntries[$date] != $day_conso ) {
+	} else if ( $calendarEntries[$date] != $compteur ) {
         	$requete = " UPDATE Meter_Calendar SET Value=".$day_conso.", Counter=".$compteur." WHERE Date='".$date."' AND DeviceRowID=".$device_idx." ;";
 	} else
 		$requete = "";
@@ -381,7 +379,8 @@ while ( $Hday <= $yesterday ) {
        // On met à jour DeviceStatus
        if ( $Hday >= $lastUpdate ) {
        		$requete = " UPDATE DeviceStatus SET LastUpdate='".$date." 23:59:59' , sValue=".$compteur." WHERE ID=".$device_idx." ;";
-		$new_data = true;
+       		if ( $Hday > $lastUpdate ) 
+			$new_data = true;
 		if ( $debug ) 
 			print (">". $requete . "\n");
 		$sql_meter .= $requete;
@@ -402,8 +401,8 @@ if ( $new_data ) {
 		$db->exec($sql_exec);
       		if ( $debug )
                		print (">".$sql_exec."\n");
-	} else 
-		echo "Nouvelles données importées. Les données, jusqu'à la date " . $date . " incluse, sont disponibles. \n";
+	} 
+	echo "Nouvelles données importées. Les données, jusqu'à la date " . $date . " incluse, sont disponibles. \n";
 } else 
 	echo "Pas de nouvelles données importées. \n";
 	
