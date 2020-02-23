@@ -243,16 +243,15 @@ if ( $date > $lastUpdate  && empty($compteur) === false )  {
 	$sql_calendar .= $requete;
 }
 
+// On nettoie la table Meter  des entres d'aujourd'hui (Domoticz ??)
+$requete = " DELETE FROM Meter WHERE DeviceRowID=".$device_idx." AND Date LIKE '".date('Y')."-".date('m')."-".date('d')." %' ; ";
+if ( $debug ) 
+        echo ">". $requete . "\n";
+$sql_calendar .= $requete;
+$db->exec($sql_calendar); 
+
 if ( $doday !== true ) { // Pas de conso horaire
-	$db->exec($sql_calendar); 
 	exit("Mise à jour des données de consommation journalières effectuée avec succès.\nPour les données de consommations horaires, ne pas passer de paramètres.\n");
-} else  {
-	// On nettoie la table Meter  des entres d'aujourd'hui (Domoticz ??)
-	$requete = " DELETE FROM Meter WHERE DeviceRowID=".$device_idx." AND Date LIKE '".date('Y')."-".date('m')."-".date('d')." %' ; ";
-	if ( $debug ) 
-                echo ">". $requete . "\n";
-	$sql_calendar .= $requete;
-	$db->exec($sql_calendar);
 }
 	
 // On ramène au moins les $historyDays derniers jours de conso horaire
