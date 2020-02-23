@@ -147,9 +147,6 @@ $lastUpdate->setTime(23,55,00);
 // Schema de la table [Meter_Calendar] :
 // [DeviceRowID] BIGINT NOT NULL, [Value] BIGINT NOT NULL, [Counter] BIGINT DEFAULT 0, [Date] DATETIME DEFAULT (datetime('now','localtime')
 
-  // Domotics a pu modifier la valeur du compteur de la dernière entrée on va la remettre à la bonne valeur
-$db->exec("UPDATE Meter_Calendar SET Counter=".$compteur." WHERE DeviceRowID=".$device_idx." AND Counter>".$compteur." ;");
-
 // Combien de jour d'historique pour les compteurs à 5mns (Eau)
 $results = $db->query("SELECT nValue FROM Preferences WHERE Key=\"5MinuteHistoryDays\" ;");
 $Prefs = $results->fetchArray(SQLITE3_ASSOC);
@@ -366,6 +363,7 @@ while ( $Hday <= $yesterday ) {
                         $min += 5;
                 }
         }
+	$compteur += $day_conso;
 
  // [Meter_Calendar] ([DeviceRowID] BIGINT NOT NULL, [Value] BIGINT NOT NULL, [Counter] BIGINT DEFAULT 0, [Date] DATETIME DEFAULT (datetime('now','localtime')));
         // Si besoin, on met à jour Meter_Calendar & DeviceStatus
@@ -373,7 +371,7 @@ while ( $Hday <= $yesterday ) {
         if ( ! array_key_exists($date, $calendarEntries) ) {
         	$requete = " INSERT INTO Meter_Calendar Values (".$device_idx.",".$day_conso.",".$compteur.",'".$date."') ;";
 	} else if ( $calendarEntries[$date] != $day_conso ) {
-        	$requete = " UPDATE Meter_Calendar SET Value=".$day_conso." WHERE Date='".$date."' AND DeviceRowID=".$device_idx." ;";
+        	$requete = " UPDATE Meter_Calendar SET Value=".$day_conso.", Counter=".$compteur." WHERE Date='".$date."' AND DeviceRowID=".$device_idx." ;";
 	} else
 		$requete = "";
 	if ( $debug && empty($requete) === false )
