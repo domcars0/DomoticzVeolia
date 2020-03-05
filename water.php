@@ -255,8 +255,11 @@ if ( $doday !== true ) { // Pas de conso horaire
 // On ramène au moins les $historyDays derniers jours de conso horaire
 $Hday = new DateTime();
 $Hday->sub(new DateInterval('P'.$historyDays.'D'))->setTime(23,55,00);
-$date->add(new DateInterval('P1D'));
+// $date->add(new DateInterval('P1D'));
 
+if ( $debug ) {
+	print "Date derniere MaJ Meter_Calendar = ".$date->format('d/m/Y')."\n Date history = ".$Hday->format('d/m/Y')."\n";
+}
 if ( $date < $Hday )
 	$Hday = $date;
 
@@ -271,6 +274,8 @@ if ( $debug ) {
 
 // Le compteur pour le premier jour d'import
 $compteur = $calendarEntries [$Hday->format('Y-m-d')];
+if ( $debug ) 
+	print "Compteur au matin du premier jour d'import horaire : ".$compteur."\n";
 
 $sql_meter = "";
 while ( $Hday <= $yesterday ) {
