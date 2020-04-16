@@ -83,7 +83,13 @@ curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 0);
 curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");
 curl_setopt($ch, CURLOPT_POST, 1);
 curl_setopt($ch, CURLOPT_POSTFIELDS, $post);
-curl_exec($ch);
+$login=curl_exec($ch);
+
+if ( preg_match("/inscription\.aspx/",$login) ) 
+	exit ("Identifiannt ou Mot de passe incorrect. Merci de vérifier dans le fichier water.inc.\n");
+
+if ( !preg_match("/mon-espace-perso\.aspx/",$login))
+	exit("Un problème empêche la connection au site Veolia? Merci de verifiez l'accès a internet depuis votre serveur Domoticz.\n");
 
 if ( $debug )
 	print("login ok\n");
@@ -100,7 +106,7 @@ if ( $debug )  {
 	print "Consommations journalières du fichier Veolia Med pour le mois ".$SQLyearMonth." : \n";
 	foreach ( $table as $key => $info ) {
 		if ( empty($info) === false ) {
-			$c = split(';',$info);
+			$c = explode(';',$info);
 			print "Le ".$c[0]." : ".$c[1] ." litre(s)\n";
 		} else 
 			unset($table[$key]);
