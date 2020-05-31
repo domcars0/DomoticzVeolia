@@ -7,7 +7,7 @@ __ Prérequis:
  * PHP cli + PHP curl + PHP-sqlite (apt-get install php5-cli php5-curl php5-sqlite)
 
 __ Mise en place :
-  * Se créer un compte sur le site veolia https://www.eau-services.com (https://agence.eaudugrandlyon.com/
+  * Se créer un compte sur le site veolia https://www.eau-services.com ( ou https://agence.eaudugrandlyon.com/ )
   * Domoticz :
 	- Créer un matériel de type "Dummy" (virtuel) appelé "Veolia"
 	- Depuis ce matériel, créer un capteur virtuel de type "Compteur" appelé "Eau" et l'activer. Retenir l'Idx de ce capteur.
