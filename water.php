@@ -198,7 +198,7 @@ foreach ( $table as $entry ) {
 		$prev_date->sub(new DateInterval('P1D'));
 		$result = $db->query("SELECT Counter FROM Meter_Calendar WHERE DeviceRowID=".$device_idx." and Date='".$prev_date->format('Y-m-d')."' ;");
 		$c =  $result->fetchArray(SQLITE3_ASSOC);
-		if ( empty($c['Counter']) === false && is_numeric($c['Counter']) ) then
+		if ( empty($c['Counter']) === false && is_numeric($c['Counter']) ) 
       			$compteur = $c['Counter'];
 		if ( $debug )  {
 			$prev_count = $compteur + $AddjValue;
