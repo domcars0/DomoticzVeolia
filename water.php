@@ -11,6 +11,7 @@
 * Redistributions of files must retain the above copyright notice.
 *
 * @author domcars0
+* V2.5
 *
 */
 date_default_timezone_set('Europe/Paris');
@@ -111,7 +112,7 @@ if ( $debug )  {
 		} else 
 			unset($table[$key]);
 	}
-	// print_r ($table) ;
+	print_r ($table) ;
 }
 
 // Open domoticz database
@@ -178,6 +179,7 @@ $updateDeviceStatus = false;
 $sql_calendar = "";
 // ON va récupérer le compteur depuis la table Meter_Calandar
 $compteur = 0;
+$date_compteur = null;
 // On construite une requete SQL multiple
 foreach ( $table as $entry ) {
 	if ( empty($entry) )
@@ -212,13 +214,22 @@ foreach ( $table as $entry ) {
 	if ( $liters < 0  ) {
 		$csv_counter = -$liters;
 		$compteur  =  $csv_counter - $AddjValue ;
+		$date_compteur = $date->format('d/m/Y');
 		print (">>> Valeur du Compteur , selon Veolia, le ".$date->format('d/m/Y')." = ".$csv_counter." \n");
 		continue ;
 	} else if ( $csv_counter > 0 ) {
-		$liters -= $csv_counter;
-		if ( $debug ) 
-			print (">>> Consommation effective du ".$date->format('d/m/Y')." = ".$liters." litre(s)\n");
-  		$csv_counter = 0; 
+		if ( $date_compteur == $date->format('d/m/Y') ) {
+			$liters -= $csv_counter;
+			if ( $debug ) 
+				print (">>> Consommation effective du ".$date->format('d/m/Y')." = ".$liters." litre(s)\n");
+  			$csv_counter = 0; 
+		} else {
+			// Problème !!? On vire ce jour qui ne sert pas et celui d'avant..
+			$date->sub(new DateInterval('P2D'));	
+			if ( $debug )
+                                print (">>> Problème de compteur dans le csv. Arret de l'enregistrement à la date du ".$date->format('d/m/Y')."\n");
+			break;
+		}
 	}
 
 	if (empty($compteur) === false )
