@@ -26,7 +26,7 @@ $device_idx = 12;
 
 # Nom (domainname) du serveur veolia
 # $server_name = "agence.eaudugrandlyon.com";
-$server_server = "www.eau-services.com";
+$server_name = "www.eau-services.com";
 
 # Pour infos de debugage passer à true.
 $debug = false;
