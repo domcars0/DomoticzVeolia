@@ -24,9 +24,9 @@ if ( $identifier == '1234567' && $password =='654321' )
 
 # Veolia web Page
 # login page
-$loginUrl="https://www.eau-services.com/default.aspx"; 
+$loginUrl="https://".$server_name."/default.aspx"; 
 # Consommations
-$dataUrl="https://www.eau-services.com/mon-espace-suivi-personnalise.aspx";
+$dataUrl="https://".$server_name."/mon-espace-suivi-personnalise.aspx";
 
 $doday = false;
 $pgm = array_shift($argv);

@@ -24,6 +24,10 @@ $sqlite = "/home/pi/domoticz/domoticz.db";
 # Water Virtual counter Idx
 $device_idx = 12;
 
+# Nom (domainname) du serveur veolia
+# $server_name = "agence.eaudugrandlyon.com";
+$server_server = "www.eau-services.com";
+
 # Pour infos de debugage passer à true.
 $debug = false;
 
