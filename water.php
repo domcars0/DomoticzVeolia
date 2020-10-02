@@ -11,7 +11,7 @@
 * Redistributions of files must retain the above copyright notice.
 *
 * @author domcars0
-* V2.5
+* V2.5.1
 *
 */
 date_default_timezone_set('Europe/Paris');
