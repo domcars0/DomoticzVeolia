@@ -4,7 +4,8 @@ ATTENTION: Ce script n'est pas un 'script Domoticz' au sens propre du terme. Les
 __ Prérequis:
  * Domoticz (domoticz.com)
  * Etre abonné Veolia Méditerrannée ( ou 'Grand Lyon') pour l'eau et avoir ouvert son compte sur le site https://www.eau-services.com (ou https://agence.eaudugrandlyon.com/)
- * PHP cli + PHP curl + PHP-sqlite (apt-get install php5-cli php5-curl php5-sqlite)
+ * PHP et les modules : PHP cli , PHP curl , PHP-sqlite 
+Les commandes d'install de PHP et des modules varient selon l'OS, sa version, et dla version de PHP ( ex: apt-get install php5-cli php5-curl php5-sqlite)
 
 __ Mise en place :
   * Se créer un compte sur le site veolia https://www.eau-services.com ( ou https://agence.eaudugrandlyon.com/ )
@@ -15,7 +16,7 @@ __ Mise en place :
 	- Attention , Dans "Réglages"=>"Paramètres"=>"Mètres/Compteurs", vérifier que le Compteur Diviseur de l'Eau est bien à '1000'.
   * Placer les deux fichiers water.php et water.inc (fichier de configuration) dans un même répertoire (exemple /home/pi/Veolia)
   * Rendre executable le fichier water.php (chmod +x water.php)
-  * Editer le fichier water.inc et renseigner les variables $identifier (votre identifiant veolia),  $password (votre mot de passe sur le site veolia), $sqlite (chemin complet vers la base de données domoticz), $device_idx (Idx du capteur virtuel d'eau).
+  * Editer le fichier water.inc et renseigner les variables $identifier (votre identifiant veolia),  $password (votre mot de passe sur le site veolia), $sqlite (chemin complet vers la base de données domoticz), $device_idx (Idx du capteur virtuel d'eau), $server_name (nom complet du serveur Veolia).
  * Créer un crontab qui lancera le script water.php une fois par jour.  Exemple:
 
 30 06 * * * sudo /home/pi/Veolia/water.php
