@@ -11,7 +11,7 @@
 * Redistributions of files must retain the above copyright notice.
 *
 * @author domcars0
-* V2.5.1
+* V2.5.2
 *
 */
 date_default_timezone_set('Europe/Paris');
@@ -36,7 +36,6 @@ else if (  empty($argv[0]) === false && $argv[0] === "debug" ) {
 	array_shift($argv);
 	$debug = true;
 }
-
 
 if ( empty($argv[0]) === false && is_numeric($argv[0])
                 &&  empty($argv[1]) === false && is_numeric($argv[1]) )  {
@@ -358,7 +357,14 @@ while ( $Hday <= $yesterday ) {
                 continue;
 	if ( $debug ) 
 		print ": OK\n";
-        // print_r($day_table); exit();
+	/* if ( $Hday == $yesterday )  { 
+		$last_hour=$vals[1];
+                while ( $last_hour <= 24 )
+		    $day_table[$last_hour++]=0;
+        	// DEBUG !!
+		// print_r($day_table); exit(); 
+	} */
+
 	// ON vide la Table Meter pour le jour $date
 	$requete = " DELETE FROM Meter WHERE DeviceRowID=".$device_idx." AND Date LIKE \"".$date." %\" ;";
 	$sql_meter .= $requete;
@@ -376,7 +382,7 @@ while ( $Hday <= $yesterday ) {
                                 $day_conso += $liters ;
                                 $compteur += $liters < 0 ? 0 : $liters;
                         }
-                        $requete = " INSERT INTO Meter Values ('".$device_idx."',".$compteur.",0,'".$date." ".$hour.":".str_pad($min,2, '0', STR_PAD_LEFT)."') ;";
+                        $requete = " INSERT INTO Meter Values ('".$device_idx."',".$compteur.",0,'".$date." ".$hour.":".str_pad($min,2, '0', STR_PAD_LEFT).":00') ;";
 			$sql_meter .= $requete ;
                         if ( $debug && $min == 55 ) {
                         	print (">" . $requete . "\n");
@@ -401,7 +407,7 @@ while ( $Hday <= $yesterday ) {
 
        // On met à jour DeviceStatus
        if ( $Hday >= $lastUpdate ) {
-       		$requete = " UPDATE DeviceStatus SET LastUpdate='".$date." 23:59:59' , sValue=".$compteur." WHERE ID=".$device_idx." ;";
+       		$requete = " UPDATE DeviceStatus SET LastUpdate='".$date." ".$hour.":59:59' , sValue=".$compteur." WHERE ID=".$device_idx." ;";
        		if ( $Hday > $lastUpdate ) 
 			$new_data = true;
 		if ( $debug ) 
