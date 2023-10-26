@@ -11,7 +11,7 @@
 * Redistributions of files must retain the above copyright notice.
 *
 * @author domcars0
-* V2.5.2
+* V2.6.0
 *
 */
 date_default_timezone_set('Europe/Paris');
@@ -98,9 +98,17 @@ if ( $debug )
 curl_setopt($ch, CURLOPT_URL, $dataMonthUrl );
 
 $csv = curl_exec($ch);
+if ( $debug ) 
+	print " ---- Fichier CSV ---------- \n " . $csv ." \n ----------------\n";
+
 $table = explode("\n",$csv);
 // Vire les commentaires en haut du fichier
 unset ($table[0]);
+// On verifie si le fichier est (anti)chronologique
+$l = $table[1] ;
+if (! preg_match('/^01\//',$l[0] ) ) // le commence pas par O1/ alors antichrono
+	$table = array_reverse($table);
+
 // Prepare to parse the CSV
 if ( $debug )  {
 	print "Consommations journalières du fichier Veolia Med pour le mois ".$SQLyearMonth." : \n";
@@ -311,6 +319,8 @@ while ( $Hday <= $yesterday ) {
 
 // Fichier CSV 
         $csv = curl_exec($ch);
+        if ( $debug )
+                print ("\n === Fichier CSV ==== \n $csv \n");
         $csvtable = explode("\n",$csv);
 //Inutile
         unset($csvtable[0]) ;
@@ -353,6 +363,13 @@ while ( $Hday <= $yesterday ) {
 			usleep(100000);
 		}
         }
+
+	if ( empty($day_table) )  {
+        	print "Fichier csv du ".$Hday->format('d/m/Y')." vide (ignoré)\n";
+                $Hday->add(new DateInterval('P1D'));
+		$insert = false;
+	}
+
         if ( ! $insert )
                 continue;
 	if ( $debug ) 
@@ -374,13 +391,16 @@ while ( $Hday <= $yesterday ) {
 // Transaction
         // Calcule la conso totale du Jour pour la table Meter_Calendar
         $day_conso = 0 ;
+        $hour = 0;
         foreach ( $day_table as $cvs_hour => $liters ) {
+		$cvs_hour = $cvs_hour == 0 ? 24 : $cvs_hour ;
         	$hour = str_pad($cvs_hour - 1 ,2, '0', STR_PAD_LEFT) ;
                 $min = 0 ;
                 while ( $min < 60 ) {
                 	if ( $min == 55 ) {
                                 $day_conso += $liters ;
                                 $compteur += $liters < 0 ? 0 : $liters;
+                                //$compteur += $liters;
                         }
                         $requete = " INSERT INTO Meter Values ('".$device_idx."',".$compteur.",0,'".$date." ".$hour.":".str_pad($min,2, '0', STR_PAD_LEFT).":00') ;";
 			$sql_meter .= $requete ;
